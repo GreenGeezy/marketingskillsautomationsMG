@@ -59,4 +59,6 @@ No automatic paid fallback. If DeepSeek becomes unavailable or nonzero-priced, j
 
 ## Validation scope
 
+Daily operation and one-time Google login: [daily checklist](docs/DAILY-CHECKLIST.md). Use `scripts/connect-google.ps1` outside a running job; scheduled launches and this helper share a dedicated persistent browser profile. `scripts/status.ps1` reports task and run status without model calls. GSC notification repair, validation and eligible URL indexing requests follow [Search Console operations](.opencode/skills/mastergrowbot-acquisition/references/search-console.md). Google authentication and actual submission success must be verified separately from installed tasks.
+
 Policy tests cover Mexico City boundaries, duration limits and rejection of missing/paid model metadata. Windows scripts are parsed before release. Installed bundled v2.0.32, the DeepSeek free-model connectivity response, and an autonomous public-file-read/private-result-write smoke test were verified on October17. Reported smoke-test model cost was zero. Task activation and first live business-run status belong in private deployment receipts; do not infer them from this README. Upstream audit provenance/license: [docs/UPSTREAM.md](docs/UPSTREAM.md).

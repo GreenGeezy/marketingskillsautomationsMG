@@ -29,6 +29,8 @@ Conventional crawlable HTML, clear headings, cited facts, author/update details,
 
 # Measurement
 
+Follow references/search-console.md for daily notification triage, issue repair/validation and changed-URL inspection/indexing requests. These operations are owner-authorized, but authentication must be completed by the owner and Google outcomes must be verified.
+
 Use authenticated GSC for sc-domain:mastergrowbot.com; never GSC Wizard. One settled 28-day comparison at most twice weekly; use cached evidence between. Daily checks inspect only new alerts, new recrawls or changed artifacts. At most two focused drilldowns. Monthly on/after Oct26: 90-day trends, devices/countries, branded/nonbranded, overlap, indexing and funnel. Mark not-indexed reasons individually: correct exclusions are not errors.
 
 GA4: organic landing sessions, sessions containing ios_app_click or android_app_click, and matched periods. A session conversion rate uses distinct compatible sessions, not event count divided by sessions. Keep one event per click with page/article/CTA context. App-store clicks are not installs or revenue. Use RevenueCat/App Store/Play Console attribution only when connected and supported; lack of attribution remains null. Separate Grow-Tech checkout from verified purchase. Record Google AI impressions, AI referrals and citations separately.

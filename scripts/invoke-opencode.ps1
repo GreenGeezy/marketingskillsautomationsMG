@@ -27,7 +27,7 @@ $env:OPENCODE_CONFIG_CONTENT = @{
   permission=$permission; agent=@{build=@{model=$cfg.model;permission=$permission}};
   instructions=@((Join-Path $repoRoot 'AGENTS.md'))
 } | ConvertTo-Json -Depth 12 -Compress
-$env:PLAYWRIGHT_CLI_SESSION='mastergrowbot-growth'
+. (Join-Path $PSScriptRoot 'browser-config.ps1') -ConfigPath $ConfigPath
 Set-Location -LiteralPath $cfg.siteRepo
 if($SmokeTest){
   & $cfg.opencodePath run --standalone --auto --model $cfg.model --agent build --format json 'This is a connectivity check only. Do not call any tools or read any files. Reply exactly MGB_FREE_MODEL_OK.'
