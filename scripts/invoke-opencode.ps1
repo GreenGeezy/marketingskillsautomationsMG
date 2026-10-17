@@ -4,6 +4,8 @@ $cfg = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $env:PATH = (Join-Path $repoRoot 'node_modules\.bin') + ';' + $env:PATH
 $env:OPENCODE_CONFIG_DIR = Join-Path $repoRoot '.opencode'
+& node (Join-Path $PSScriptRoot 'check-model.mjs') $ConfigPath
+if($LASTEXITCODE -ne 0){throw 'Fresh zero-cost model check failed; no inference started.'}
 # Explicitly pin BOTH task and auxiliary models. No paid automatic fallback.
 $external = [ordered]@{'*'='deny'}
 foreach($directory in @($cfg.stateDir,$repoRoot,(Join-Path $cfg.stateDir 'opencode-runs'))){

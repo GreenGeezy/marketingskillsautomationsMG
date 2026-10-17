@@ -9,7 +9,7 @@ $node=(Get-Command node.exe -ErrorAction Stop).Source
 & $node (Join-Path $PSScriptRoot 'run.mjs') measurement --preflight
 if($LASTEXITCODE -ne 0){throw 'Preflight failed; no tasks registered.'}
 $principal=New-ScheduledTaskPrincipal -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) -LogonType Interactive -RunLevel Limited
-$settings=New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 55)
+$settings=New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 55) -RestartCount 30 -RestartInterval (New-TimeSpan -Minutes 5)
 $hours=@(9,10,11)
 for($i=0;$i -lt $names.Count;$i++){
   $job=$names[$i]

@@ -10,8 +10,9 @@ const [job,...flags]=process.argv.slice(2);
 const preflight=flags.includes('--preflight');
 if(!jobs.includes(job)) throw new Error('Usage: node scripts/run.mjs measurement|content|distribution [--preflight]');
 const configPath=resolve(root,'config.local.json');
-const config=JSON.parse(await readFile(configPath,'utf8'));
+const config=JSON.parse((await readFile(configPath,'utf8')).replace(/^\uFEFF/,''));
 validateConfig(config);
+if(!preflight && timeBudget(new Date(),config.maxMinutes)<60000){console.log('Skipped: outside the allowed window or less than one minute remains.');process.exit(0);}
 for(const path of [config.siteRepo,config.stateDir,config.opencodePath]) await access(path);
 const catalog=await fetch('https://models.dev/api.json',{signal:AbortSignal.timeout(20000)}).then(r=>{if(!r.ok)throw new Error('Model catalog unavailable');return r.json();});
 const modelReceipt=requireFree(catalog,config.model);
@@ -35,7 +36,7 @@ async function currentUpdate(active){
 }
 try {
   try{const h=await open(lock,'wx');owned=true;await h.writeFile(JSON.stringify({owner:runId,startedAt:start.toISOString(),pid:process.pid}));await h.close();}
-  catch(e){if(e.code==='EEXIST'){console.log('Skipped: shared growth lock exists; reconcile its owner, never auto-expire.');process.exitCode=0;}else throw e;}
+  catch(e){if(e.code==='EEXIST'){console.log('Deferred: shared growth lock exists; retry within the window, never auto-expire its owner.');process.exitCode=75;}else throw e;}
   if(owned){
     // The daily marker is written BEFORE invoking the agent: ambiguous actions cannot be retried blindly.
     let reserved=false;
@@ -48,13 +49,15 @@ try {
       const deadline=new Date(start.getTime()+budget);
       await writeFile(contextFile,`# Scheduled run context\nrunId: ${runId}\njob: ${job}\nstateDir: ${state}\nsiteRepo: ${config.siteRepo}\nautomationRepo: ${root}\nresultFile: ${resultFile}\ndeadlineUTC: ${deadline.toISOString()}\nThe runner owns the shared lock. Do not reacquire it. Complete routine authorized work without questions. Read ${root.replaceAll('\\','/')}/AGENTS.md and the mastergrowbot-acquisition skill.\n\n${instructions}`);
       receipt.status='running';await saveReceipt();
+      const remaining=deadline.getTime()-Date.now();
+      if(remaining<60000){receipt.status='partial';throw new Error('Preparation consumed the remaining window; no inference started.');}
       const log=await open(join(runs,`${runId}.log`),'wx');
       child=spawn('powershell.exe',['-NoProfile','-NonInteractive','-File',join(root,'scripts','invoke-opencode.ps1'),'-ConfigPath',configPath,'-ContextPath',contextFile],{cwd:config.siteRepo,windowsHide:true,stdio:['ignore',log.fd,log.fd],env:{...process.env,OPENCODE_CONFIG_DIR:join(root,'.opencode'),MGB_AUTOMATION_ROOT:root}});
       let timedOut=false;
       timer=setTimeout(()=>{
         timedOut=true;retainLock=true;
         if(child.pid){const killer=spawn('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true});killer.on('error',()=>{});}
-      },budget);
+      },Math.max(0,deadline.getTime()-Date.now()));
       const exit=await new Promise((res,rej)=>{child.on('error',rej);child.on('exit',(code,signal)=>res({code,signal}));});
       clearTimeout(timer);await log.close();receipt.exit=exit;
       if(timedOut){receipt.status='timed-out-reconcile-required';throw new Error('Deadline reached; process tree termination requested. Lock retained until reconciliation.');}
