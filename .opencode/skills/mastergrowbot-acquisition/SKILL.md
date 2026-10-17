@@ -17,6 +17,8 @@ Use a maximum of three ranked opportunities with priority = buyer relevance (0â€
 
 Every job must produce a concrete outcome, eligible work artifact or precise blocker with an independent next action. Do not repeat no-change audits. Respect the deadline; if a build cannot finish before it, leave a resumable branch and release-stage receipt. No pushes in the final ten minutes unless all validation is complete and production verification can finish.
 
+Reconcile the sprint ceiling using AGENTS.md before trusting historical weekly-cap blockers. Always include unavailable GSC/GA4 or other required access in the result blockers array, even when useful independent actions completed; a completed execution does not mean every integration works. Do not launch a long-lived watcher waiting for future scheduled slots: write the current result and return. Task Scheduler owns later runs; scripts/status.ps1 reads their receipts without model calls.
+
 # Content and AEO gates
 
 Load the sibling ai-answer-visibility skill for each content/release cycle and AI visibility review. It is an explicit owner priority, not an optional audit-score exercise.

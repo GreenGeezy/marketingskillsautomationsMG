@@ -11,8 +11,14 @@ if(Test-Path -LiteralPath $lockPath){
   Write-Host "Shared lock: $($lock.owner) since $($lock.startedAt). Reconcile before any manual retry."
 }
 Get-ChildItem -LiteralPath (Join-Path $cfg.stateDir 'opencode-runs') -Filter '*.json' |
-  Where-Object {$_.Name -notlike '*.result.json'} | Sort-Object LastWriteTime -Descending | Select-Object -First 9 |
+  Where-Object {$_.Name -notlike '*.result.json' -and $_.Name -notmatch '^\d{4}-\d{2}-\d{2}-(measurement|content|distribution)\.json$'} | Sort-Object LastWriteTime -Descending | Select-Object -First 6 |
   ForEach-Object {
     $receipt=Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
-    [pscustomobject]@{Run=$receipt.runId;Status=$receipt.status;Error=$receipt.error}
+    $blockers=@()
+    if($receipt.resultFile -and (Test-Path -LiteralPath $receipt.resultFile)){
+      $result=Get-Content -LiteralPath $receipt.resultFile -Raw | ConvertFrom-Json
+      $blockers=@($result.blockers | ForEach-Object {if($_ -is [string]){$_}else{$_.id}})
+      if($result.accessBlocker){$blockers+= $result.accessBlocker.id}
+    }
+    [pscustomobject]@{Run=$receipt.runId;Status=$receipt.status;Blockers=($blockers -join ', ');Error=$receipt.error}
   } | Format-Table -Wrap
