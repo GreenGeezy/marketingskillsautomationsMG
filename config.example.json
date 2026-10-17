@@ -1,0 +1,11 @@
+{
+  "siteRepo": "C:/Users/elidu/OneDrive/Documents/MasterGrowbot Landing Page SEO + Web Design/mastergrowbot",
+  "stateDir": "C:/Users/elidu/OneDrive/Documents/MasterGrowbot Landing Page SEO + Web Design/organic-growth-state",
+  "opencodePath": "C:/Users/elidu/AppData/Local/Programs/@opencodedesktop/resources/opencode-cli.exe",
+  "model": "opencode/deepseek-v4.1-flash-free",
+  "timezone": "America/Mexico_City",
+  "maxMinutes": 50,
+  "oldAutomationPausedVerified": false,
+  "connectionsVerified": false,
+  "enabled": false
+}

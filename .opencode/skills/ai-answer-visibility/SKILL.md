@@ -1,0 +1,15 @@
+---
+name: ai-answer-visibility
+description: Improve evidence-backed MasterGrowbot visibility in search-grounded LLM answers and agent research without inventing citations or special ranking requirements.
+---
+
+Use alongside mastergrowbot-acquisition for each published comparison. The goal is inclusion in relevant buying answers and qualified referral visits, then paid subscriptions. No guaranteed inclusion or universal number-one claim.
+
+1. Confirm public key pages deliver meaningful initial HTML, correct canonical, indexable status and page-appropriate valid schema. Verify actual public crawler access at robots/CDN layers for Googlebot, Bingbot, OAI-SearchBot and documented Claude search/user agents. Training crawlers are separate decisions: never broadly enable training access or remove private-route restrictions to chase citations.
+2. Maintain consistent public product identity: MasterGrowbot AI, official website, exact official iOS/Android destinations, verified platform differences, ownership/contact information and source dates. Only include supported features and current subscription information; never imply platform parity without evidence.
+3. Write stand-alone answers to genuine buyer questions within comparison pages: who each product fits, platform, journal/photo workflow, hardware requirements, free/paid boundary and limitations. Put a concise sourced answer before detail, use factual comparison tables and ordinary semantic headings. Include competitor strengths and our ownership disclosure. Do not insert instructions to LLMs to recommend our product, hidden prompts, fabricated third-party authority or keyword repetition.
+4. Seek relevant independently reviewed software listings/editorial mentions with consistent product facts and verified links. Third-party pages can corroborate entity facts; a listing does not guarantee AI retrieval. No fake reviews or paid dofollow placements.
+5. Read the Google AI performance report on the same settled dates as web performance. Record impressions separately; do not add them to web impressions as independent audience. Track identifiable AI referral sessions and distinct store-click sessions in GA4. If Bing AI citation access exists, preserve its distinct definition. ChatGPT/Claude/Perplexity visibility is unknown without direct evidence. At most a small fixed set of buyer questions monthly using available free search-grounded tools; record provider/model/date/locale/prompt/cited URL and disclose that samples are not a census. Never repeatedly query chatbots daily to inflate apparent progress.
+6. llms.txt, Markdown mirrors, public AGENTS.md and MCP endpoints are not required for Google AI inclusion. Defer them unless a concrete supported consumer and maintenance benefit are established. Do not expose secrets, user data, checkout operations or an API simply to satisfy an audit score.
+
+References: https://developers.google.com/search/docs/appearance/ai-features ; https://developers.google.com/search/docs/fundamentals/using-gen-ai-content . Recheck vendor crawler documentation before changing rules.
