@@ -29,7 +29,7 @@ const receipt={runId,job,startedAt:start.toISOString(),status:'starting',modelRe
 async function saveReceipt(){await writeFile(join(runs,`${runId}.json`),JSON.stringify(receipt,null,2));}
 async function currentUpdate(active){
   const path=join(state,'current.json');
-  let c;try{c=JSON.parse(await readFile(path,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;c={schemaVersion:1};}
+  let c;try{c=JSON.parse((await readFile(path,'utf8')).replace(/^\uFEFF/,''));}catch(e){if(e.code!=='ENOENT')throw e;c={schemaVersion:1};}
   if(active)c.activeRun={id:runId,owner:runId,job,startedAt:start.toISOString()};
   else if(c.activeRun?.id===runId||c.activeRun?.owner===runId)c.activeRun=null;
   await writeFile(path,JSON.stringify(c,null,2));
@@ -62,7 +62,7 @@ try {
       clearTimeout(timer);await log.close();receipt.exit=exit;
       if(timedOut){receipt.status='timed-out-reconcile-required';throw new Error('Deadline reached; process tree termination requested. Lock retained until reconciliation.');}
       if(exit.code!==0){receipt.status='failed';throw new Error(`OpenCode exited ${exit.code}; inspect private log.`);}
-      let result;try{result=JSON.parse(await readFile(resultFile,'utf8'));}catch{receipt.status='missing-result';throw new Error('CLI exit alone is not success: required result JSON missing or invalid.');}
+      let result;try{result=JSON.parse((await readFile(resultFile,'utf8')).replace(/^\uFEFF/,''));}catch{receipt.status='missing-result';throw new Error('CLI exit alone is not success: required result JSON missing or invalid.');}
       if(result.runId!==runId||result.job!==job||!['completed','partial','blocked'].includes(result.status)||!Array.isArray(result.actions)||!Array.isArray(result.blockers)) throw new Error('Invalid result contract; inspect logs before retry.');
       receipt.status=result.status;receipt.resultFile=resultFile;
       await writeFile(marker,JSON.stringify({runId,status:receipt.status,finishedAt:new Date().toISOString()},null,2));
