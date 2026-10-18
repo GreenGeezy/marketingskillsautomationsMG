@@ -1,10 +1,11 @@
-param([Parameter(Mandatory)][string]$ConfigPath,[string]$ContextPath,[switch]$SmokeTest)
+param([Parameter(Mandatory)][string]$ConfigPath,[string]$ContextPath,[switch]$SmokeTest,[string]$SelectedModel)
 $ErrorActionPreference = 'Stop'
 $cfg = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
+if($SelectedModel){$cfg.model=$SelectedModel}
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $env:PATH = (Join-Path $repoRoot 'node_modules\.bin') + ';' + $env:PATH
 $env:OPENCODE_CONFIG_DIR = Join-Path $repoRoot '.opencode'
-& node (Join-Path $PSScriptRoot 'check-model.mjs') $ConfigPath
+& node (Join-Path $PSScriptRoot 'check-model.mjs') $ConfigPath $cfg.model
 if($LASTEXITCODE -ne 0){throw 'Fresh zero-cost model check failed; no inference started.'}
 # Explicitly pin BOTH task and auxiliary models. No paid automatic fallback.
 $external = [ordered]@{'*'='deny'}
@@ -18,12 +19,13 @@ $permission = [ordered]@{
   websearch='deny'; task='deny'; question='deny'; external_directory=$external;
   bash=[ordered]@{
     '*'='deny'; 'git status*'='allow'; 'git diff*'='allow'; 'git log*'='allow'; 'git show*'='allow'; 'git fetch*'='allow'; 'git switch*'='allow'; 'git branch*'='allow'; 'git add*'='allow'; 'git commit*'='allow'; 'git merge --ff-only*'='allow'; 'git pull --ff-only*'='allow'; 'git push origin*'='allow';
-    'node scripts/*'='allow'; 'npm run build*'='allow'; 'npm run lint*'='allow'; 'npx playwright test*'='allow'; 'playwright-cli *'='allow'; 'seomator *'='allow'; 'rg *'='allow';
+    'node scripts/*'='allow'; 'node *research-ios-competitors.mjs*'='allow'; 'npm run build*'='allow'; 'npm run lint*'='allow'; 'npx playwright test*'='allow'; 'playwright-cli *'='allow'; 'seomator *'='allow'; 'rg *'='allow';
     'git push *--force*'='deny'; 'git reset*'='deny'; 'git clean*'='deny'; 'git push *--delete*'='deny'; '*run.mjs*'='deny'; '*register-tasks*'='deny'; '*npm install*'='deny'; '*curl*'='deny'; '*Invoke-WebRequest*'='deny'
   }
 }
 $env:OPENCODE_CONFIG_CONTENT = @{
   model=$cfg.model; small_model=$cfg.model; enabled_providers=@('opencode'); share='disabled'; autoupdate=$false;
+  compaction=@{auto=$true;keep=@{tokens=15000};buffer=20000};
   permission=$permission; agent=@{build=@{model=$cfg.model;permission=$permission}};
   instructions=@((Join-Path $repoRoot 'AGENTS.md'))
 } | ConvertTo-Json -Depth 12 -Compress

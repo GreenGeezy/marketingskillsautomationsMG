@@ -1,5 +1,7 @@
 # 10:45 — comparison content and qualified traffic acquisition
 
+First read mastergrowbot-acquisition/references/competitor-acquisition.md. The October18 owner correction takes precedence over earlier candidate suggestions: discover and rank the largest relevant US iOS competitors by verified rating count, then select uncovered buyer-intent opportunities using GSC and actual search results. Use evergreen titles/slugs. Do not substitute repeated existing-article repairs for new competitor acquisition. Read the cached us-ios-competitor-census.json before research; keep the model context to the top relevant shortlist, not all descriptions.
+
 Load mastergrowbot-acquisition and the measurement handoff. Advance the highest-value distinct software-selection opportunity through research, fact-check, draft, release and discovery as time allows. Start with a corpus/intent check; do not recreate existing bud, Jane or BudLabs comparisons. Candidates are hypotheses, not preapproved factual claims or proven search volume.
 
 Spend the limited free-model window preparing reusable primary-source competitor evidence and up to three independently qualified new comparisons per week during the first 14 days. Publish only when evidence, distinct intent, factual quality, authentic assets/limitations, app CTA and technical gates pass. If exact demand is unavailable, explicitly label a small owner-directed experiment supported by category demand; do not call it proven. Never publish a thin keyword-swapped article. Do not rewrite recent pages to produce activity.

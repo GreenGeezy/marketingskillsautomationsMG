@@ -21,6 +21,8 @@ Reconcile the sprint ceiling using AGENTS.md before trusting historical weekly-c
 
 # Content and AEO gates
 
+First read references/competitor-acquisition.md. The October18 bottom-of-funnel US iOS competitor research policy supersedes the older candidate examples below. Choose uncovered purchase/switching intent from the ranked evidence, not GrowDoc by default. Census refresh uses node with the absolute automationRepo/scripts/research-ios-competitors.mjs path; scheduled cwd is the website repository. Keep only the relevant shortlist in context.
+
 Load the sibling ai-answer-visibility skill for each content/release cycle and AI visibility review. It is an explicit owner priority, not an optional audit-score exercise.
 
 Map query intent to existing URLs before selecting a slug. Keep successful AI guide and recently changed pages stable for 28 days after confirmed recrawl; 14-day review is observational. Real factual or technical errors can be repaired immediately. Favor distinct comparisons over cosmetic rewrites. Current candidates: GrowDoc vs MasterGrowbot (photo-report software decision), HiGrade vs MasterGrowbot (hardware requirement/subscription decision, no potency-performance claims), and a platform-specific software buying gap only if distinct from existing app guides. Check actual corpus before creating any URL.

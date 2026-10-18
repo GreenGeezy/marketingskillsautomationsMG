@@ -1,5 +1,12 @@
 export const jobs = ['measurement', 'content', 'distribution'];
 export const freeModels = ['opencode/deepseek-v4.1-flash-free', 'opencode/glm-5.3-flash-free'];
+export function selectFree(catalog,preferred) {
+  if(!freeModels.includes(preferred))throw new Error('Preferred model not allowlisted');
+  for(const candidate of [preferred,...freeModels.filter(x=>x!==preferred)]){
+    try{return requireFree(catalog,candidate);}catch{}
+  }
+  throw new Error('No allowlisted model has verified zero pricing; no inference started.');
+}
 export function localClock(date = new Date()) {
   const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {timeZone:'America/Mexico_City', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hourCycle:'h23'}).formatToParts(date).map(x=>[x.type,x.value]));
   return {day:`${p.year}-${p.month}-${p.day}`, minutes:Number(p.hour)*60+Number(p.minute), seconds:Number(p.second)};

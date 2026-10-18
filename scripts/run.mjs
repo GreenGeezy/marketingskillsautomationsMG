@@ -3,7 +3,7 @@ import {resolve,dirname,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
-import {jobs,localClock,timeBudget,requireFree,validateConfig} from './policy.mjs';
+import {jobs,localClock,timeBudget,selectFree,validateConfig} from './policy.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const [job,...flags]=process.argv.slice(2);
@@ -15,7 +15,7 @@ validateConfig(config);
 if(!preflight && timeBudget(new Date(),config.maxMinutes)<60000){console.log('Skipped: outside the allowed window or less than one minute remains.');process.exit(0);}
 for(const path of [config.siteRepo,config.stateDir,config.opencodePath]) await access(path);
 const catalog=await fetch('https://models.dev/api.json',{signal:AbortSignal.timeout(20000)}).then(r=>{if(!r.ok)throw new Error('Model catalog unavailable');return r.json();});
-const modelReceipt=requireFree(catalog,config.model);
+const modelReceipt=selectFree(catalog,config.model);
 if(preflight){ console.log(JSON.stringify({status:'preflight-passed',modelReceipt,window:'09:45–12:45 America/Mexico_City',note:'No inference, authentication, publication or scheduler activation tested.'},null,2)); process.exit(0); }
 if(!config.enabled||!config.oldAutomationPausedVerified||!config.connectionsVerified) throw new Error('Setup incomplete: enabled, oldAutomationPausedVerified and connectionsVerified must be true after setup checks.');
 const start=new Date(), budget=timeBudget(start,config.maxMinutes);
@@ -52,7 +52,7 @@ try {
       const remaining=deadline.getTime()-Date.now();
       if(remaining<60000){receipt.status='partial';throw new Error('Preparation consumed the remaining window; no inference started.');}
       const log=await open(join(runs,`${runId}.log`),'wx');
-      child=spawn('powershell.exe',['-NoProfile','-NonInteractive','-File',join(root,'scripts','invoke-opencode.ps1'),'-ConfigPath',configPath,'-ContextPath',contextFile],{cwd:config.siteRepo,windowsHide:true,stdio:['ignore',log.fd,log.fd],env:{...process.env,OPENCODE_CONFIG_DIR:join(root,'.opencode'),MGB_AUTOMATION_ROOT:root}});
+      child=spawn('powershell.exe',['-NoProfile','-NonInteractive','-File',join(root,'scripts','invoke-opencode.ps1'),'-ConfigPath',configPath,'-ContextPath',contextFile,'-SelectedModel',modelReceipt.id],{cwd:config.siteRepo,windowsHide:true,stdio:['ignore',log.fd,log.fd],env:{...process.env,OPENCODE_CONFIG_DIR:join(root,'.opencode'),MGB_AUTOMATION_ROOT:root}});
       let timedOut=false;
       timer=setTimeout(()=>{
         timedOut=true;retainLock=true;

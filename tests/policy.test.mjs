@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {timeBudget,localClock,requireFree,validateConfig} from '../scripts/policy.mjs';
+import {timeBudget,localClock,requireFree,validateConfig,selectFree} from '../scripts/policy.mjs';
+test('pre-inference fallback only selects verified zero-cost allowlisted models',()=>{
+  const preferred='opencode/deepseek-v4.1-flash-free';
+  const fallback='opencode/glm-5.3-flash-free';
+  const cat={opencode:{models:{'deepseek-v4.1-flash-free':{cost:{input:1,output:0}},'glm-5.3-flash-free':{cost:{input:0,output:0}}}}};
+  assert.equal(selectFree(cat,preferred).id,fallback);
+  cat.opencode.models['glm-5.3-flash-free'].cost.output=1;
+  assert.throws(()=>selectFree(cat,preferred));
+  assert.throws(()=>selectFree({},'unknown/model'));
+});
 const at=x=>new Date(`2026-10-17T${x}-06:00`);
 test('Mexico City hard boundaries and capped run duration',()=>{
   assert.equal(timeBudget(at('09:44:59')),0);

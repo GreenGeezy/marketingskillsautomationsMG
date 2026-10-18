@@ -55,7 +55,9 @@ Disable tasks reversibly with `Get-ScheduledTask -TaskName 'MasterGrowbot-OpenCo
 
 ## Free-model fallback
 
-No automatic paid fallback. If DeepSeek becomes unavailable or nonzero-priced, jobs stop before inference. The code also permits `opencode/glm-5.3-flash-free`, but switching is explicit and requires its own current zero-price verification. If neither is free, keep state and completed research; do not buy credits. Routine web/audit tools need no paid APIs; ordinary electricity/internet costs remain.
+Before inference, prefer DeepSeek V4.1 Flash Free; if its catalog entry is absent or not verified zero-priced, automatically choose GLM 5.3 Flash Free only if its current catalog entry verifies zero cost. Pin task and auxiliary models to that selection and recheck in the launcher. If neither qualifies or the catalog cannot be fetched, stop. A runtime rate limit/failure does not blindly replay a job with another model: external actions might already have occurred. Preserve receipts and resume the specific remaining work in a later job. Model switching cannot guarantee unlimited usage or evade provider limits. No paid fallback or credit purchases.
+
+Each scheduled invocation creates a fresh session: the command has no --continue or --session argument. The old desktop setup conversation's 100k context display does not carry into those jobs or measure remaining free allowance. Automatic compaction is explicitly enabled for long individual runs; durable private state carries progress between runs. No daily setup prompt is needed. Three independently scheduled, serialized jobs remain preferable to one long session with a larger failure scope.
 
 ## Validation scope
 
