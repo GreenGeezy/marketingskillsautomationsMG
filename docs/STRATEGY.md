@@ -48,7 +48,7 @@ The revenue relationship is qualified visits × store-click-session rate × stor
 
 - [Bookmarked Keval Shah case study](https://x.com/SEOKeval/status/2111090683423387886), read October17: useful intent, technical-cleanup and internal-link principles. It describes a previously authoritative brand; its result is not a forecast for this site. Do not copy its 40-link/keyword-anchor prescription.
 - [OpenCode models/pricing](https://opencode.ai/v2/docs/console/models/): DeepSeek V4.1 Flash Free and GLM-5.3-Flash Free listed as limited-time free. No end date or unlimited-capacity promise verified.
-- [OpenCode automation](https://opencode.ai/v2/docs/cli/commands/): run supports noninteractive prompts. Installed bundled engine verified as v2.0.32.
+- [OpenCode automation](https://opencode.ai/v2/docs/cli/commands/): run supports noninteractive prompts. Installed bundled engine verified as v2.1.1 on 2026-10-20 (auto-updated from v2.0.32); v2 uses the `permissions` array with `shell`/`subagent` actions.
 - [Google AI features guidance](https://developers.google.com/search/docs/appearance/ai-features).
 - [Google generative content guidance](https://developers.google.com/search/docs/fundamentals/using-gen-ai-content).
 - [GrowDoc vendor](https://www.growdoc.ca/about.aspx), [HiGrade vendor FAQ](https://www.gethigrade.com/faq.php): software facts must be refreshed before release; vendor claims are not independent tests.

@@ -1,4 +1,4 @@
-import {readFile,writeFile,mkdir,open,unlink,access} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,open,unlink,access,rename} from 'node:fs/promises';
 import {resolve,dirname,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
@@ -29,7 +29,19 @@ const receipt={runId,job,startedAt:start.toISOString(),status:'starting',modelRe
 async function saveReceipt(){await writeFile(join(runs,`${runId}.json`),JSON.stringify(receipt,null,2));}
 async function currentUpdate(active){
   const path=join(state,'current.json');
-  let c;try{c=JSON.parse((await readFile(path,'utf8')).replace(/^\uFEFF/,''));}catch(e){if(e.code!=='ENOENT')throw e;c={schemaVersion:1};}
+  let c;
+  try{c=JSON.parse((await readFile(path,'utf8')).replace(/^\uFEFF/,''));}
+  catch(e){
+    if(e.code==='ENOENT'){c={schemaVersion:1};}
+    else{
+      // A malformed state file must never strand the shared lock or block later jobs.
+      // Preserve the evidence next to it, then continue with minimal valid state.
+      const backup=`${path}.corrupt-${Date.now()}`;
+      await rename(path,backup).catch(()=>{});
+      console.error(`current.json invalid (${e.message}); moved to ${backup}`);
+      c={schemaVersion:1};
+    }
+  }
   if(active)c.activeRun={id:runId,owner:runId,job,startedAt:start.toISOString()};
   else if(c.activeRun?.id===runId||c.activeRun?.owner===runId)c.activeRun=null;
   await writeFile(path,JSON.stringify(c,null,2));
@@ -72,11 +84,14 @@ try {
 finally {
   clearTimeout(timer);
   if(owned){
-    receipt.finishedAt=new Date().toISOString();await saveReceipt();
+    try{receipt.finishedAt=new Date().toISOString();await saveReceipt();}
+    catch(e){console.error(`receipt write failed: ${e.message}`);}
     if(!retainLock){
-      await currentUpdate(false);
-      const existing=JSON.parse(await readFile(lock,'utf8'));
-      if(existing.owner===runId)await unlink(lock);
+      try{await currentUpdate(false);}catch(e){console.error(`current.json update failed: ${e.message}`);}
+      try{
+        const existing=JSON.parse(await readFile(lock,'utf8'));
+        if(existing.owner===runId)await unlink(lock);
+      }catch(e){console.error(`lock release failed: ${e.message}`);}
     }
   }
 }
