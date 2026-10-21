@@ -31,6 +31,9 @@ foreach($directory in @($cfg.stateDir,$repoRoot,(Join-Path $cfg.stateDir 'openco
 }
 $permissions += @(
   @{action='shell'; resource='*'; effect='deny'},
+  @{action='shell'; resource='git status'; effect='allow'},
+  @{action='shell'; resource='npm run build'; effect='allow'},
+  @{action='shell'; resource='npm run lint'; effect='allow'},
   @{action='shell'; resource='git status *'; effect='allow'},
   @{action='shell'; resource='git diff *'; effect='allow'},
   @{action='shell'; resource='git log *'; effect='allow'},
@@ -75,7 +78,7 @@ Set-Location -LiteralPath $cfg.siteRepo
 if($SmokeTest){
   & $cfg.opencodePath run --standalone --auto --model $cfg.model --agent build --format json 'This is a connectivity check only. Do not call any tools or read any files. Reply exactly MGB_FREE_MODEL_OK.'
 } elseif($ShellSmokeTest){
-  & $cfg.opencodePath run --standalone --auto --model $cfg.model --agent build --format json 'Use the shell tool to run exactly this command: git status --short . Then reply with that command output only. Do not read files.'
+  & $cfg.opencodePath run --standalone --auto --model $cfg.model --agent build --format json 'Use the shell tool to run exactly two separate commands: git status --short . and playwright-cli --help . Report their exit status briefly. Do not open a browser, read files, edit anything or run any other command.'
 } else {
   if(-not $ContextPath){throw 'ContextPath required'}
   & $cfg.opencodePath run --standalone --auto --model $cfg.model --agent build --format json --file $ContextPath 'Execute the attached scheduled job now. Follow its result contract and deadline. Do not ask routine approval questions. Use only free configured tools and preserve release checks.'

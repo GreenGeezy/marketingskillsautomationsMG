@@ -1,0 +1,12 @@
+import {localClock} from './policy.mjs';
+
+export function campaignContext(date=new Date()) {
+  const day=localClock(date).day;
+  if(day<'2026-10-21'||day>'2026-10-25')return 'No temporary campaign is active. Follow the app-first buyer acquisition strategy; preserve released hardware pages and follow up due measurements without extending their campaign. The October21 OWNER CONTENT LOCK in AGENTS.md still applies: no existing website text/review/product-claim edits. Save findings and proposals where further publication is not authorized.';
+  return `# Active owner-authorized campaign: AG1000, October21–25 inclusive
+This temporary campaign overrides older app-only content selection for this run. Read automationRepo/docs/AG1000-CAMPAIGN.md and private stateDir/ag1000-campaign.json first. MasterGrowbot AI remains the long-term revenue priority; urgent app/checkout failures take precedence.
+Promote only the verified $199 AG1000 at /grow-tech#grow-light; checkout /grow-tech/checkout/grow-light. Preserve ALL existing website text, reviews, ratings, product claims, price, images and design exactly. The owner explicitly verified existing reviews and product claims. Do not remove, replace, qualify or rewrite them. Exactly one new light buying guide is authorized at /grow-guides/100w-led-grow-light-buying-checklist. Reconcile production and its publication receipt before writing; once live, do not create replacements or repeatedly rewrite it. No cultivation, yield or potency instructions.
+Measurement: product/checkout availability, Google issues and compatible funnel evidence. Content: only the Amazon book card beside the two digital offers and the single new standalone guide are authorized website additions. No edits to existing guides, shop copy, metadata, headings, reviews or product facts; no reciprocal-link additions that alter existing text. Once those two additions are live, monitor and report only. Distribution: production/mobile/discovery verification; existing app outreach permissions only, no new hardware email campaign.
+Record product landing sessions, checkout starts, confirmed light orders, app-click sessions and attributable subscriptions separately; unavailable metrics stay null. Update private campaign completedActions/publication/changedUrls/blockers, preserving unknown fields. Never claim checkout equals purchase.
+On October26 this override expires automatically. Resume app-first content, review campaign results once, and preserve the published resources.`;
+}

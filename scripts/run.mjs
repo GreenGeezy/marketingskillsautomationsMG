@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {jobs,localClock,timeBudget,selectFree,validateConfig} from './policy.mjs';
+import {campaignContext} from './campaign.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const [job,...flags]=process.argv.slice(2);
@@ -57,7 +58,7 @@ try {
     if(reserved){
       await currentUpdate(true);
       const resultFile=join(runs,`${runId}.result.json`), contextFile=join(runs,`${runId}.context.md`);
-      const instructions=await readFile(join(root,'jobs',`${job}.md`),'utf8');
+      const instructions=campaignContext(start)+'\n\n'+await readFile(join(root,'jobs',`${job}.md`),'utf8');
       const deadline=new Date(start.getTime()+budget);
       await writeFile(contextFile,`# Scheduled run context\nrunId: ${runId}\njob: ${job}\nstateDir: ${state}\nsiteRepo: ${config.siteRepo}\nautomationRepo: ${root}\nresultFile: ${resultFile}\ndeadlineUTC: ${deadline.toISOString()}\nThe runner owns the shared lock. Do not reacquire it. Complete routine authorized work without questions. Read ${root.replaceAll('\\','/')}/AGENTS.md and the mastergrowbot-acquisition skill.\n\n${instructions}`);
       receipt.status='running';await saveReceipt();
