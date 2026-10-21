@@ -10,7 +10,7 @@ Repository: https://github.com/GreenGeezy/marketingskillsautomationsMG
 
 The installed desktop app on this laptop includes `C:\Users\elidu\AppData\Local\Programs\@opencodedesktop\resources\opencode-cli.exe` (verified **v2.1.1** on 2026-10-20 after a desktop auto-update from v2.0.32). You **do not need a separate CLI installation**. The scheduler calls this bundled engine; the desktop UI can be used to inspect work. After desktop updates, setup should rediscover/verify the executable and flags; v2 requires the `permissions` array with `shell`/`subagent` actions (V1 `permission`/`bash`/`task` is ignored and silently denies shell). The current npm V2 package is `@opencode/cli`; do not blindly install the V1 `opencode-ai` over V2.
 
-## Daily schedule — America/Mexico_City
+## Daily schedule: America/Mexico_City
 
 | Start | Job | Output |
 |---|---|---|
@@ -44,6 +44,14 @@ Routine research, eligible publishing, tests, safe commits/pushes and previously
 The runner launches a **private standalone server** so per-job model/permission configuration is applied rather than inherited from an already-running desktop server. Its process tree can be terminated at the deadline. It does not expose a server port externally or alter the desktop's persistent settings. The command permission patterns are workflow guardrails, not a hardened OS sandbox; run under the normal non-admin user and keep secrets out of the project.
 
 See [strategy](docs/STRATEGY.md), [public audit](docs/AUDIT.md), and [AI-answer visibility skill](.opencode/skills/ai-answer-visibility/SKILL.md). Three evidence-qualified pages/week is a short-sprint maximum, not a quota. Do not equate more model calls with more qualified traffic.
+
+## Content quality gate
+
+Every new or materially updated article, guide, comparison, meta description, CTA, FAQ and outreach message follows [the content-quality standard](.opencode/skills/mastergrowbot-acquisition/references/content-quality.md) and the [no-ai-slop rules](https://github.com/petergyang/no-ai-slop). The owner's stricter rule is zero em dashes (U+2014) and zero `&mdash;`; en dashes are allowed only in numeric ranges. Every article needs a bottom-of-funnel keyword brief, a value thesis, sourced facts, a comparison or decision element and a clear product, app-store or checkout CTA. Before release, run:
+
+`node scripts/check-content-quality.mjs --changed --repo "<siteRepo>" --min-words 1200 --require-cta`
+
+Quote the site path if it contains spaces. Fix every error. The automated check covers the hard rules; the read-aloud and portability tests remain part of the edit pass. A generic checklist or thin keyword-swapped page is a release failure. Existing website text remains protected by the October21 content lock; audit and report it instead of rewriting it.
 
 ## Results, recovery and rollback
 

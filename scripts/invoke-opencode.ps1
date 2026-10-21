@@ -47,6 +47,7 @@ $permissions += @(
   @{action='shell'; resource='git pull --ff-only *'; effect='allow'},
   @{action='shell'; resource='git push origin *'; effect='allow'},
   @{action='shell'; resource='node scripts/*'; effect='allow'},
+  @{action='shell'; resource='node *check-content-quality.mjs*'; effect='allow'},
   @{action='shell'; resource='node *research-ios-competitors.mjs*'; effect='allow'},
   @{action='shell'; resource='npm run build *'; effect='allow'},
   @{action='shell'; resource='npm run lint *'; effect='allow'},

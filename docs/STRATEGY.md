@@ -1,4 +1,4 @@
-# 10x qualified-traffic acquisition sprint — October 17, 2026
+# 10x qualified-traffic acquisition sprint: October 17, 2026
 
 The objective is 10x website traffic from likely MasterGrowbot AI buyers, with increased paid subscriptions as the business outcome. No growth multiplier or deadline is guaranteed. The initial sprint lasts 14 days from activation; evaluate traffic over settled 28-day windows and supported subscription/revenue cohorts over 60–90 days. Search recrawling and editorial review impose delays that faster inference cannot remove.
 

@@ -1,4 +1,4 @@
-# MasterGrowbot public-site audit — October 17, 2026
+# MasterGrowbot public-site audit: October 17, 2026
 
 Requested upstream: https://github.com/seo-skills/seo-audit-skill, commit `fac4b75f2059b6d74bb05a865fe1b0ca5de3ba66`. Executed npm `@seomator/seo-audit@7.0.0`, after `seomator init -y`:
 

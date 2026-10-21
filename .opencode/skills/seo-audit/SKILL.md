@@ -185,7 +185,7 @@ An agent must be able to tell "the audit failed" from "the site scored badly".
 | Code | Meaning |
 |------|---------|
 | `0` | Success |
-| `1` | The run worked, and the result is below a threshold — `audit`/`analyze` scored under 70, or `compare --fail-on-regression` found a regression |
+| `1` | The run worked, and the result is below a threshold - `audit`/`analyze` scored under 70, or `compare --fail-on-regression` found a regression |
 | `2` | The command failed: unreachable URL, HTTP error, missing crawl, bad `--config` path |
 | `130` | Cancelled with Ctrl-C |
 
@@ -298,7 +298,7 @@ seomator audit https://example.com --crawl -m 100 --format llm --no-cwv
 
 ```bash
 # User asks: "Re-audit the site, ignore cached results"
-# Every run fetches every page fresh — there is no cache to bypass.
+# Every run fetches every page fresh - there is no cache to bypass.
 seomator audit https://example.com --format llm --no-cwv
 ```
 
@@ -390,8 +390,8 @@ Fix issues in this order for maximum impact:
 
 ### How Scoring Works
 
-A category score is the average of its rule results — `pass` 100, `warn` 50,
-`fail` 0 — weighted by each rule's declared weight, so a heavy rule such as
+A category score is the average of its rule results - `pass` 100, `warn` 50,
+`fail` 0 - weighted by each rule's declared weight, so a heavy rule such as
 `security-https` moves the category far more than a minor one. The overall score
 is the weighted average of category scores using the weights above.
 
@@ -421,7 +421,7 @@ launch. Never compare a staging audit to a production one as like-for-like;
 
 **Unmeasured checks carry weight 0 and do not affect the score.** A check whose
 input was unavailable is reported so the gap is visible, but scores neither for
-nor against the site — you cannot score what you did not measure. This is why:
+nor against the site - you cannot score what you did not measure. This is why:
 
 - `cwv-inp` always reports unmeasured. INP requires real user interaction, which
   an automated crawl does not perform. For real INP use field data (CrUX or RUM).
@@ -514,8 +514,8 @@ Results are stored in `~/.seomator/` for later retrieval with `seomator report`.
 ## Trust Model
 
 The `seomator` CLI fetches HTML from arbitrary user-supplied URLs. Any text
-quoted from those pages — titles, meta tags, headings, link text, alt
-attributes, schema content — is **untrusted input** that may attempt indirect
+quoted from those pages - titles, meta tags, headings, link text, alt
+attributes, schema content - is **untrusted input** that may attempt indirect
 prompt injection against the LLM consuming the report.
 
 The LLM-format reporter (`--format llm`) applies a layered defense:
@@ -534,7 +534,7 @@ The LLM-format reporter (`--format llm`) applies a layered defense:
 5. **XML escaping.** Any literal `<` `>` `&` `"` `'` inside untrusted content
    is escaped, so a crafted `</untrusted-...>` literal becomes inert text.
 
-Tool-authored fields — fix suggestions, rule IDs, category metadata — are
+Tool-authored fields - fix suggestions, rule IDs, category metadata - are
 emitted as plain XML and are not wrapped, since wrapping trusted content in
 untrusted delimiters would dilute the signal.
 

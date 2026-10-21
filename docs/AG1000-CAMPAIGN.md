@@ -12,6 +12,10 @@ Later owner-approved layout refinement: show the Quickstart and PDF as two wider
 
 Read private stateDir/ag1000-campaign.json and production before acting. The manual release may already have completed both additions. Once released, no additional website edits are authorized by this campaign. Do not duplicate articles, repeat unchanged indexing requests or launch background watchers.
 
+## Content quality
+
+Any new campaign copy, including a future guide or offer description, must pass the global content-quality standard: zero em dashes, no AI-slop patterns, a bottom-of-funnel keyword brief, verified facts, a comparison or decision element and a clear checkout path. The two authorized additions are already live. Existing text remains locked; report defects instead of rewriting it.
+
 09:45: verify scheduler, product/checkout accessibility, GSC issues and funnel data. 10:45: complete only missing authorized additions, otherwise monitor conversion paths and save findings. 11:45: mobile/production checks and eligible changed-URL discovery; existing app outreach remains under its current limits. Hardware email outreach is not authorized. Urgent findings outside the allowed edit scope are reported, not used as permission to rewrite website text.
 
 Record product landing sessions, checkout starts, confirmed light orders, app-store-click sessions and attributed subscriptions separately. Keep missing data null, with source/date windows. Checkout is not a purchase. Review campaign results October26. Search performance needs recrawl and an adequate observation period.

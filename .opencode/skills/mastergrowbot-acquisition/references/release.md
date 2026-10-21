@@ -4,6 +4,8 @@ Use a temporary `codex/` branch. Inspect repo instructions and protect unrelated
 
 For content changes: clear answer-first H1, accurate sources, helpful sections, truthful app CTAs, correct Article/BreadcrumbList and genuine dateModified. Add relevant internal links and backlinks from existing pages where useful, without quotas or stuffing. Update sitemap lastmod only for meaningful content changes. llms.txt is optional discovery, never a ranking guarantee.
 
+Run the content-quality gate before the build: `node "<automationRepo>/scripts/check-content-quality.mjs" --changed --repo "<siteRepo>" --min-words 1200 --require-cta`. Use the `automationRepo` and `siteRepo` paths from the run context and keep the quotes, because the site path contains spaces. Fix every error, record the checker output and scorecard, and complete the no-ai-slop edit pass. A failed check blocks publication of the changed content. The October21 owner content lock still protects existing text; report defects instead of rewriting locked pages.
+
 Run build, lint, and the applicable existing tests. Default SEO release suite: `npx playwright test tests/seo-release.spec.ts tests/grow-tech-testimonials.spec.ts --workers=1`. Additional tests should validate real new behavior, not mirror implementation. Run once and repeat only failed/affected checks after changes. For no-code monitoring do not run builds/tests.
 
 Block only for failed build, material regression, wrong target canonical, broken page/rendering, accidental crawler/noindex blocking, material unsupported claims, or introduced serious security issue. Unrelated lint warnings, unavailable analytics, optional indexing buttons, CrUX, backlinks and unknown shipping timing do not block publication.

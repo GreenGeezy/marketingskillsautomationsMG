@@ -1,4 +1,4 @@
-# Authorized outreach pilot — October 9, 2026
+# Authorized outreach pilot: October 9, 2026
 
 The human explicitly authorized sends without additional review using Gmail from mastergrowbotai@gmail.com. Verify connected sender before sending; never substitute another account. Restrict scope to relevant editorial/resource links and software listings for MasterGrowbot. No paid services, purchased lists, tracking pixels, mass mail, invented claims, paid dofollow links or link exchanges.
 

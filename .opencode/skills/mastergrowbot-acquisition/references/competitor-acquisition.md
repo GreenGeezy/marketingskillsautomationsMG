@@ -1,5 +1,7 @@
 # October18 owner correction: US iOS competitor acquisition
 
+All content also follows references/content-quality.md: zero em dashes, no AI-slop patterns, a bottom-of-funnel keyword and value brief, sourced facts and a clear purchase path. A thin keyword-swapped page is a release failure.
+
 Bottom-of-funnel is the default and takes priority over top-of-funnel traffic. Choose queries showing a purchase, subscription, download or switching decision. Do not create broad 'what is', general growing tips, awareness listicles or generic plant-health articles as a substitute. A specific price/platform/capability question qualifies only if the answer leads naturally to a supported app purchase decision. Optimize qualified store-click sessions and attributed paid subscriptions, not raw impressions alone.
 
 Discover competitors before choosing topics. Refresh the private us-ios-competitor-census.json monthly or after a material market change using the repository's scripts/research-ios-competitors.mjs; use the current cached census otherwise. The free Apple Search API samples the US storefront. Confirm finalists in the US iPhone App Store and primary vendor documentation. Do not assume the sample is exhaustive or that prior GrowDoc/HiGrade suggestions outrank larger relevant competitors.

@@ -47,11 +47,11 @@ format includes the rule message and a fix suggestion alongside each failing rul
 
 | Overall Score | Grade | Meaning |
 |---------------|-------|---------|
-| 90–100 | A | Excellent — minor optimizations only |
-| 80–89 | B | Good — address warnings |
-| 70–79 | C | Fair — several issues to fix |
-| 60–69 | D | Needs work — priority fixes required |
-| <60 | F | Poor — critical issues to resolve |
+| 90–100 | A | Excellent - minor optimizations only |
+| 80–89 | B | Good - address warnings |
+| 70–79 | C | Fair - several issues to fix |
+| 60–69 | D | Needs work - priority fixes required |
+| <60 | F | Poor - critical issues to resolve |
 
 ## Listing Rules at Runtime
 
