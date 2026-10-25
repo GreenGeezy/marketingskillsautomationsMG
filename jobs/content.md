@@ -1,5 +1,23 @@
 # 10:45: comparison content and qualified traffic acquisition
 
+## Priority order (owner-approved 2026-10-25)
+
+Default action is repair, not publish. Work this order and stop at the first item that is not already done today:
+
+1. One CTR rewrite on a page that already ranks. Source: the CTR queue in state `seoActionQueue`. Pick the highest projected-click page not already owned by an open task.
+2. One index-recovery improvement on a URL from `indexCoverage.crawledNotIndexed`: add verified substance, then link it from at least one indexed page with a descriptive anchor.
+3. Only if 1 and 2 are both genuinely complete, one new URL.
+
+New URL rules, all binding:
+
+- Maximum two new URLs per calendar week.
+- Hard block: no new URL if `indexCoverage.indexed` has not risen above its last recorded value within the past 14 days.
+- Hard block: no new URL while the indexed count is 31 or below.
+- Demand evidence required: the query set must show intent that no existing page owns.
+- Run `node scripts/release-gate.mjs` before publishing any new URL. A non-zero exit blocks the release.
+
+Do not rewrite a head term without first recording what occupies the SERP for that head term in the state file.
+
 Read `.opencode/skills/mastergrowbot-acquisition/references/content-quality.md` before selecting a topic. The standard is binding: zero em dashes, no AI-slop patterns, and a written bottom-of-funnel keyword and value brief before drafting. Quality outranks volume. A generic checklist, a thin keyword-swapped page, or a page that cannot lead the buyer to a product, app store or checkout is a release failure. One strong page beats three thin pages.
 
 Before selecting a new topic, read the latest private `content-quality-audit-*.json`. A documented failure in a live page is a rewrite candidate, not permission to edit locked text. Keep the owner-authorization request in `nextActions` until the owner approves or the lock changes.
