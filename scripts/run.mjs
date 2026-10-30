@@ -46,12 +46,12 @@ async function currentUpdate(active){await updateState(join(state,'current.json'
 
 try {
   try{const h=await open(lock,'wx');owned=true;await h.writeFile(JSON.stringify({owner:runId,startedAt:start.toISOString(),pid:process.pid,processStartedAt:new Date(Date.now()-process.uptime()*1000).toISOString(),executable:process.execPath}));await h.close();}
-  catch(e){if(e.code==='EEXIST'){console.log('Deferred: shared growth lock exists; retry within the window, never auto-expire its owner.');process.exitCode=75;}else throw e;}
+  catch(e){if(e.code==='EEXIST'){receipt.status='deferred-lock';console.log('Deferred: shared growth lock exists; retry within the window, never auto-expire its owner.');process.exitCode=75;}else throw e;}
   if(owned){
     // The daily marker is written BEFORE invoking the agent: ambiguous actions cannot be retried blindly.
     let reserved=false;
     try{const h=await open(marker,'wx');await h.writeFile(JSON.stringify({runId,status:'attempted',startedAt:start.toISOString()}));await h.close();reserved=true;}
-    catch(e){if(e.code==='EEXIST')console.log('Skipped: this job already attempted today. Read receipt before any manual reconciliation.');else throw e;}
+    catch(e){if(e.code==='EEXIST'){receipt.status='already-attempted';console.log('Skipped: this job already attempted today. Read receipt before any manual reconciliation.');}else throw e;}
     if(reserved){
       await currentUpdate(true);
       const resultFile=join(runs,`${runId}.result.json`), contextFile=join(runs,`${runId}.context.md`);
@@ -83,10 +83,10 @@ try {
 } catch(e){receipt.error=e.message;if(receipt.status==='running'||receipt.status==='starting')receipt.status='failed';process.exitCode=1;console.error(e.message);}
 finally {
   clearTimeout(timer);
-  if(owned){
+  {
     try{receipt.finishedAt=new Date().toISOString();await saveReceipt();}
     catch(e){console.error(`receipt write failed: ${e.message}`);}
-    if(!retainLock){
+    if(owned&&!retainLock){
       try{await currentUpdate(false);}catch(e){console.error(`current.json update failed: ${e.message}`);}
       try{
         const existing=JSON.parse(await readFile(lock,'utf8'));

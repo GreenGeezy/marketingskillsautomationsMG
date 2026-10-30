@@ -1,3 +1,5 @@
+Read docs/RECOVERY-POLICY.md FIRST using automationRepo absolute path. It supersedes conflicting historical copy locks, caps, index-growth gates and selection rules below.
+
 ---
 name: mastergrowbot-acquisition
 description: Execute MasterGrowbot's autonomous evidence-led buyer-intent SEO and AEO acquisition sprint using free models, shared receipts and verified releases.
@@ -6,8 +8,6 @@ description: Execute MasterGrowbot's autonomous evidence-led buyer-intent SEO an
 # Objective and allocation
 
 10x website traffic from interested app buyers as quickly as defensible work permits. Optimize for organic landing sessions containing canonical iOS/Android store-click events, and supported paid attribution. Never substitute impressions, raw events or total app revenue for attributed purchases.
-
-80% of effort: demand-backed software comparisons, proven app landing-page conversion paths, indexing/technical recovery and measurement. 20%: relevant free distribution and competitor discovery. During the initial 14-day sprint, prepare up to three distinct comparison resources weekly and publish at most three if each independently clears the evidence gates. This replaces the old one-page weekly cap under the owner's explicit acceleration instruction. It is a ceiling, not a quota. Review on day14; return to one/week if evidence is weak, indexing stalled or pages duplicate intent. Never manufacture query volume to meet a quota.
 
 # Run contract
 
