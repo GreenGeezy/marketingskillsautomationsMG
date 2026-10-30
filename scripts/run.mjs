@@ -12,20 +12,22 @@ const [job,...flags]=process.argv.slice(2);
 const preflight=flags.includes('--preflight');
 if(!jobs.includes(job)) throw new Error('Usage: node scripts/run.mjs measurement|content|distribution [--preflight]');
 const configPath=resolve(root,'config.local.json');
+async function invocation(status,details={}){const folder=join(root,'output','scheduler');await mkdir(folder,{recursive:true});await atomicJson(join(folder,Date.now()+'-'+job+'-invocation.json'),{job,status,at:new Date().toISOString(),...details});}
+
 process.on('uncaughtException',async error=>{
  try{const folder=join(root,'output','scheduler');await mkdir(folder,{recursive:true});await atomicJson(join(folder,Date.now()+'-'+job+'-setup.json'),{job,status:'setup-failed',error:error.message,at:new Date().toISOString()});}finally{console.error(error.message);process.exitCode=1;}
 });
 const config=JSON.parse((await readFile(configPath,'utf8')).replace(/^\uFEFF/,''));
 validateConfig(config);
-if(!preflight && timeBudget(new Date(),config.maxMinutes)<60000){console.log('Skipped: outside the allowed window or less than one minute remains.');process.exit(0);}
+if(!preflight && timeBudget(new Date(),config.maxMinutes)<60000){await invocation('outside-window');console.log('Skipped: outside the allowed window or less than one minute remains.');process.exit(0);}
 for(const path of [config.siteRepo,config.stateDir,config.opencodePath]) await access(path);
 if(!preflight){
  let cooldown;try{cooldown=JSON.parse(await readFile(join(config.stateDir,'quota-cooldown.json'),'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
- if(cooldown&&new Date(cooldown.retryAt)>new Date()){console.log('Deferred: provider cooldown until '+cooldown.retryAt);process.exit(0);}
+ if(cooldown&&new Date(cooldown.retryAt)>new Date()){await invocation('quota-cooldown',{retryAt:cooldown.retryAt});console.log('Deferred: provider cooldown until '+cooldown.retryAt);process.exit(0);}
  const weekday=new Intl.DateTimeFormat('en-US',{timeZone:'America/Mexico_City',weekday:'short'}).format(new Date());
  if(job==='distribution'&&!['Tue','Fri'].includes(weekday)){
  let due=[];try{due=JSON.parse(await readFile(join(config.stateDir,'distribution-due.json'),'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
- if(!Array.isArray(due)||!due.some(x=>x.status==='due'&&new Date(x.dueAt)<=new Date())){console.log('Skipped: no due distribution work; no inference.');process.exit(0);}
+ if(!Array.isArray(due)||!due.some(x=>x.status==='due'&&new Date(x.dueAt)<=new Date())){await invocation('no-due-work');console.log('Skipped: no due distribution work; no inference.');process.exit(0);}
  }
 }
 
