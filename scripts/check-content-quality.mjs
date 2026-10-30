@@ -143,6 +143,7 @@ function isContentFile(file) {
 function isArticleFile(file) {
   const base = path.basename(file).toLowerCase();
   const normalized = file.replace(/\\/g, '/').toLowerCase();
+  if (['growguidearticle.tsx','growguides.ts'].includes(base)) return false;
   if (/(guide|comparison|article|buying|review)/.test(base)) return true;
   if (normalized.includes('/grow-guides/') && /\.(md|mdx|ts|tsx)$/.test(base)) return true;
   if (/\.(md|mdx)$/.test(base) && /(^|\/)(content|src\/content|src\/pages|src\/data)\//.test(normalized)) return true;
@@ -282,6 +283,21 @@ function main() {
     const file = path.resolve(repo, entry.file);
     if (!fs.existsSync(file) || !fs.statSync(file).isFile()) continue;
     reports.push(scanFile(file, options, entry.addedLines, !options.changed));
+    if(path.basename(file)==='growGuides.ts'){
+      const source=fs.readFileSync(file,'utf8');
+      const starts=[...source.matchAll(/\{\s*"slug"\s*:\s*"([^"]+)"/g)];
+      for(let i=0;i<starts.length;i++){
+        const start=starts[i].index,end=starts[i+1]?.index??source.length;
+        const first=source.slice(0,start).split('\n').length;
+        const last=first+source.slice(start,end).split('\n').length;
+        if(options.changed&&entry.addedLines&&!Array.from(entry.addedLines).some(n=>n>=first&&n<last))continue;
+        const body=source.slice(start,end);const words=(body.match(/[A-Za-z0-9][A-Za-z0-9'’-]*/g)||[]).length;
+        const errors=[];
+        if(options.minWords>0&&words<options.minWords)errors.push({file:file+'#'+starts[i][1],line:first,rule:'word-count',message:'Individual guide below minimum: '+words,excerpt:starts[i][1]});
+        if(options.requireCta&&!/apps\.apple\.com|play\.google\.com|\/checkout|\/grow-tech/.test(body))errors.push({file:file+'#'+starts[i][1],line:first,rule:'missing-cta',message:'Individual guide needs a product CTA',excerpt:starts[i][1]});
+        reports.push({file:file+'#'+starts[i][1],words,isArticle:true,errors,warnings:[],legacy:{emDashes:0,mdashEntities:0}});
+      }
+    }
   }
 
   const errors = reports.flatMap((report) => report.errors);

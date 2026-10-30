@@ -2,25 +2,30 @@ param([Parameter(Mandatory)][ValidateSet('measurement','content','distribution')
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $root
-
-# Keep a per-day transcript. A failure before run.mjs writes its receipt
-# (config, model catalog, lock path) otherwise leaves only a Task Scheduler
-# exit code and no diagnostic artifact. output/ is gitignored.
 $logDir=Join-Path $root 'output\scheduler'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
-$log=Join-Path $logDir ("{0}-{1}.log" -f (Get-Date -Format 'yyyy-MM-dd'),$Job)
-"[{0}] start job={1} node={2}" -f (Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),$Job,$NodePath | Out-File -FilePath $log -Append -Encoding utf8
-
-$out=@()
+$day=[TimeZoneInfo]::ConvertTimeBySystemTimeZoneId([DateTime]::UtcNow,'Central Standard Time (Mexico)').ToString('yyyy-MM-dd')
+$log=Join-Path $logDir ($day+'-'+$Job+'.log')
+"[$([DateTime]::UtcNow.ToString('o'))] start job=$Job" | Out-File $log -Append -Encoding utf8
+$code=1
 try {
-  $out = & $NodePath (Join-Path $PSScriptRoot 'run.mjs') $Job *>&1
-  $code = $LASTEXITCODE
-} catch {
-  $out = @("scheduler-entry error: $($_.Exception.Message)")
-  $code = 1
-}
-
-$out | Out-File -FilePath $log -Append -Encoding utf8
-$out | Write-Output
-"[{0}] end job={1} exit={2}" -f (Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),$Job,$code | Out-File -FilePath $log -Append -Encoding utf8
+ $info=New-Object System.Diagnostics.ProcessStartInfo
+ $info.FileName=$NodePath
+ $info.Arguments='"'+(Join-Path $PSScriptRoot 'run.mjs')+'" '+$Job
+ $info.WorkingDirectory=$root
+ $info.UseShellExecute=$false
+ $info.CreateNoWindow=$true
+ $info.RedirectStandardOutput=$true
+ $info.RedirectStandardError=$true
+ $process=New-Object System.Diagnostics.Process
+ $process.StartInfo=$info
+ [void]$process.Start()
+ $stdout=$process.StandardOutput.ReadToEndAsync()
+ $stderr=$process.StandardError.ReadToEndAsync()
+ $process.WaitForExit()
+ $stdout.Result | Out-File $log -Append -Encoding utf8
+ $stderr.Result | Out-File $log -Append -Encoding utf8
+ $code=$process.ExitCode
+} catch { $_.Exception.Message | Out-File $log -Append -Encoding utf8 }
+"[$([DateTime]::UtcNow.ToString('o'))] end job=$Job exit=$code" | Out-File $log -Append -Encoding utf8
 exit $code

@@ -1,3 +1,5 @@
+Read docs/RECOVERY-POLICY.md FIRST using automationRepo absolute path. It supersedes conflicting historical copy locks, caps, index-growth gates and selection rules below.
+
 # MasterGrowbot autonomous SEO + AI-answer acquisition
 
 Goal: **10x website traffic from interested MasterGrowbot AI buyers**, then more paid subscriptions. This repository contains the strategy, audit, reusable skills, three daily jobs, Windows scheduler and a paste-ready OpenCode setup prompt. Growth is a target, not a guaranteed result.

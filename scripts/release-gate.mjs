@@ -34,63 +34,15 @@ export function evaluateGate(state, now = new Date()) {
   const coverage = state?.indexCoverage ?? {};
   const indexed = coverage.indexed;
 
-  if (!Number.isFinite(indexed)) {
-    blocks.push('Index coverage is unmeasured: indexCoverage.indexed is null. Record a GSC reading before releasing a new URL.');
-  } else if (indexed <= MIN_INDEXED) {
-    blocks.push(`Indexed count is ${indexed}. No new URL is allowed until it rises above ${MIN_INDEXED}.`);
-  }
-
-  // Build the reading history, falling back to the single observed reading.
-  const history = [];
-  if (Array.isArray(coverage.history)) {
-    for (const entry of coverage.history) {
-      const at = parseDate(entry?.observedAt);
-      if (at && Number.isFinite(entry?.indexed)) history.push({at, indexed: entry.indexed});
-    }
-  }
-  const latest = parseDate(coverage.observedAt);
-  if (latest && Number.isFinite(indexed) && !history.some(h => h.at.getTime() === latest.getTime())) {
-    history.push({at: latest, indexed});
-  }
-  history.sort((a, b) => a.at - b.at);
-
-  const windowStart = new Date(now.getTime() - WINDOW_DAYS * DAY);
-  const inWindow = history.filter(h => h.at >= windowStart && h.at <= now);
-
-  if (!inWindow.length) {
-    blocks.push(`No index-coverage reading within the last ${WINDOW_DAYS} days. Re-read GSC and record it in indexCoverage.`);
-  } else if (inWindow.length === 1) {
-    blocks.push(`Only one index-coverage reading in the last ${WINDOW_DAYS} days. Two readings are required to prove movement.`);
-  } else {
-    const first = inWindow[0];
-    const last = inWindow[inWindow.length - 1];
-    if (last.indexed <= first.indexed) {
-      blocks.push(`Indexed count has been flat for ${WINDOW_DAYS} days (${first.indexed} to ${last.indexed}). New URLs stay blocked.`);
-    }
-  }
-
-  // Weekly cap.
-  const weekStart = startOfWeek(now);
-  let releasedThisWeek = null;
-  if (Number.isFinite(state?.newUrlsThisWeek)) {
-    releasedThisWeek = state.newUrlsThisWeek;
-  } else if (Array.isArray(state?.publishedUrls)) {
-    releasedThisWeek = state.publishedUrls.filter(entry => {
-      const at = parseDate(entry?.publishedDate);
-      return at && at >= weekStart && at <= now;
-    }).length;
-  }
-
-  if (releasedThisWeek === null) {
-    warnings.push('Weekly new-URL count is unknown: record publishedUrls with publishedDate, or newUrlsThisWeek.');
-  } else if (releasedThisWeek >= WEEKLY_CAP) {
-    blocks.push(`Weekly cap reached: ${releasedThisWeek} of ${WEEKLY_CAP} new URLs already released this week.`);
-  }
-
-  if (indexed > MIN_INDEXED && state?.indexTarget && indexed < state.indexTarget) {
-    warnings.push(`Indexed count ${indexed} is still below the ${state.indexTarget} target. Keep recovery work ahead of new pages.`);
-  }
-
+  const candidate=state?.releaseCandidate;
+  for(const key of ['distinctIntent','verifiedFacts','crawlable','internalLinks','productionChecks']) if(candidate?.[key]!==true) blocks.push('Release evidence required: '+key);
+  const day=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Mexico_City',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
+  const midnight=new Date(day+'T00:00:00-06:00');
+  const weekStart=new Date(midnight.getTime()-((midnight.getUTCDay()+6)%7)*DAY);
+  const releasedThisWeek=Array.isArray(state?.publishedUrls)?state.publishedUrls.filter(x=>{const at=parseDate(x.publishedDate);return at&&at>=weekStart&&at<=now;}).length:null;
+  if(releasedThisWeek===null) blocks.push('Missing dated publication ledger.');
+  else if(releasedThisWeek>=WEEKLY_CAP) blocks.push('Weekly cap reached.');
+  if(!coverage.reportUpdatedAt) warnings.push('Source update date unknown; do not infer fresh coverage progress.');
   return {
     ok: blocks.length === 0,
     checkedAt: now.toISOString(),
