@@ -23,7 +23,7 @@ $permissions = @(
   @{action='question'; resource='*'; effect='deny'},
   @{action='external_directory'; resource='*'; effect='deny'}
 )
-foreach($directory in @($cfg.stateDir,$repoRoot,(Join-Path $cfg.stateDir 'opencode-runs'))){
+foreach($directory in @($cfg.siteRepo,$cfg.stateDir,$repoRoot,(Join-Path $cfg.stateDir 'opencode-runs'))){
   foreach($variant in @($directory.Replace('\','/'),$directory.Replace('/','\'))){
     $permissions += @{action='external_directory'; resource=$variant; effect='allow'}
     $permissions += @{action='external_directory'; resource=($variant+'/*'); effect='allow'}
@@ -97,6 +97,10 @@ $permissions += @(
   @{action='shell'; resource='node_modules\\.bin\\playwright-cli*'; effect='allow'},
   @{action='shell'; resource='node_modules/.bin/playwright-cli*'; effect='allow'},
   @{action='shell'; resource='git push *--force*'; effect='deny'},
+  @{action='shell'; resource='git -C * push *--force*'; effect='deny'},
+  @{action='shell'; resource='git -C * push *--delete*'; effect='deny'},
+  @{action='shell'; resource='git -C * reset *'; effect='deny'},
+  @{action='shell'; resource='git -C * clean *'; effect='deny'},
   @{action='shell'; resource='git reset *'; effect='deny'},
   @{action='shell'; resource='git clean *'; effect='deny'},
   @{action='shell'; resource='git push *--delete*'; effect='deny'},

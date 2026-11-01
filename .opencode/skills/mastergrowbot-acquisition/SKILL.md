@@ -1,9 +1,11 @@
-Read docs/RECOVERY-POLICY.md FIRST using automationRepo absolute path. It supersedes conflicting historical copy locks, caps, index-growth gates and selection rules below.
-
 ---
 name: mastergrowbot-acquisition
 description: Execute MasterGrowbot's autonomous evidence-led buyer-intent SEO and AEO acquisition sprint using free models, shared receipts and verified releases.
 ---
+
+# Current policy
+
+Read docs/RECOVERY-POLICY.md using automationRepo. Read private recovery-context.json first and only the relevant queue/receipt excerpts. It supersedes historical copy locks and publication rules.
 
 # Objective and allocation
 
@@ -11,7 +13,7 @@ description: Execute MasterGrowbot's autonomous evidence-led buyer-intent SEO an
 
 # Run contract
 
-The Node runner has already acquired the old shared run-lock.json and written activeRun; use the supplied stateDir, runId and resultFile. Do not manage that lock yourself. Read current.json, opportunities.json and distribution.json; read only relevant experiment, issue and outreach entries. Reconcile latest main, production and receipts before acting. Preserve unrelated work. If dirty changes prevent a safe release, save a patch/brief in private state; never reset or discard them.
+The Node runner has already acquired the old shared run-lock.json and written activeRun; use the supplied stateDir, runId and resultFile. Do not manage that lock yourself. Read recovery-context.json and the selected queue item; read only relevant experiment, issue and outreach excerpts. Reconcile latest main, production and receipts before acting. Preserve unrelated work. If dirty changes prevent a safe release, save a patch/brief in private state; never reset or discard them.
 
 Use a maximum of three ranked opportunities with priority = buyer relevance (0–3) × observed demand confidence (0–3) × likely impact (0–3) / estimated hours. Scores are editorial prioritization, not traffic forecasts. Exact competitor-query volume unavailable is null; vendor audience/review activity is only a proxy and must be labelled. Build once from the existing competitor table; recheck public facts before publishing.
 

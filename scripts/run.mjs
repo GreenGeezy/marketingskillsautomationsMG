@@ -35,7 +35,7 @@ const catalog=await fetch('https://models.dev/api.json',{signal:AbortSignal.time
 const modelReceipt=selectFree(catalog,config.model);
 if(preflight){ console.log(JSON.stringify({status:'preflight-passed',modelReceipt,window:'09:45–12:45 America/Mexico_City',note:'No inference, authentication, publication or scheduler activation tested.'},null,2)); process.exit(0); }
 if(!config.enabled||!config.oldAutomationPausedVerified||!config.connectionsVerified) throw new Error('Setup incomplete: enabled, oldAutomationPausedVerified and connectionsVerified must be true after setup checks.');
-const start=new Date(), budget=timeBudget(start,job==='content'?Math.min(35,config.maxMinutes):config.maxMinutes);
+const start=new Date(), budget=timeBudget(start,job==='content'?Math.min(35,config.maxMinutes):job==='measurement'?Math.min(15,config.maxMinutes):Math.min(25,config.maxMinutes));
 if(budget<60000){console.log('Skipped: outside 09:45–12:45 Mexico City or less than one minute remains.');process.exit(0);}
 const runId=`${localClock(start).day}-${job}-${randomUUID()}`;
 const state=resolve(config.stateDir), runs=join(state,'opencode-runs');
@@ -57,7 +57,8 @@ try {
     if(reserved){
       await currentUpdate(true);
       const resultFile=join(runs,`${runId}.result.json`), contextFile=join(runs,`${runId}.context.md`);
-      const instructions=await readFile(join(root,'docs/RECOVERY-POLICY.md'),'utf8')+'\n'+campaignContext(start)+'\n\n'+await readFile(join(root,'jobs',`${job}.md`),'utf8');
+      let compact={};try{const c=JSON.parse((await readFile(join(state,'recovery-context.json'),'utf8')).replace(/^\uFEFF/,''));compact={updatedAt:c.updatedAt,window:c.window,recoveryQueue:(c.recoveryQueue||[]).filter(x=>!['done','completed'].includes(x.status)).slice(0,3)};}catch(e){if(e.code!=='ENOENT')throw e;}
+      const instructions='Compact handoff (read full state fields only when needed):\n'+JSON.stringify(compact)+'\n'+await readFile(join(root,'docs/RECOVERY-POLICY.md'),'utf8')+'\n'+campaignContext(start)+'\n\n'+await readFile(join(root,'jobs',`${job}.md`),'utf8');
       const deadline=new Date(start.getTime()+budget);
       await writeFile(contextFile,`# Scheduled run context\nrunId: ${runId}\njob: ${job}\nstateDir: ${state}\nsiteRepo: ${config.siteRepo}\nautomationRepo: ${root}\nresultFile: ${resultFile}\ndeadlineUTC: ${deadline.toISOString()}\nThe runner owns the shared lock. Do not reacquire it. Complete routine authorized work without questions. Read ${root.replaceAll('\\','/')}/AGENTS.md and the mastergrowbot-acquisition skill.\n\n${instructions}`);
       receipt.status='running';await saveReceipt();

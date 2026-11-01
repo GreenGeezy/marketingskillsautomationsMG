@@ -22,3 +22,6 @@ Get-ChildItem -LiteralPath (Join-Path $cfg.stateDir 'opencode-runs') -Filter '*.
     }
     [pscustomobject]@{Run=$receipt.runId;Status=$receipt.status;Blockers=($blockers -join ', ');Error=$receipt.error}
   } | Format-Table -Wrap
+
+# Deterministic daily outcomes, including outside-window and quota skips. No model calls.
+& node (Join-Path $PSScriptRoot "daily-status.mjs")

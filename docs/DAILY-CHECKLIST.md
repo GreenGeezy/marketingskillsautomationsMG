@@ -15,3 +15,16 @@ New/materially repaired live pages enter a private URL queue. The agent inspects
 DeepSeek V4.1 Flash free remains the configured model; every run requires fresh zero-cost catalog verification for both task and auxiliary models. If the promotion ends or verification fails, inference stops without switching to a paid model. There is no guaranteed best free model or guaranteed 10x outcome.
 
 October18 update: the runner can select verified-free GLM 5.3 Flash before a job starts if DeepSeek's catalog entry no longer qualifies. It never replays partially executed work merely to switch models. All three jobs start fresh sessions, so the desktop setup chat's 100k context is not a daily allowance and does not need resetting. Provider usage limits remain outside our control. Content now prioritizes evergreen, bottom-of-funnel comparisons selected from US iPhone competitor popularity and actual query opportunity; see the acquisition skill's competitor-acquisition reference.
+
+
+## November 1 stability update
+
+All three daily triggers remain 09:45/10:45/11:45 Mexico City. WakeToRun is enabled per task; Windows power policy, battery state and hardware can still prevent wake. Keep laptop powered, online and signed into Windows; shutdown prevents execution. No global power/security settings were changed. October31 woke at 13:03, invoked tasks at 13:09 and skipped outside the 12:45 cutoff. Exit0 on a skip does not mean a business job completed.
+
+Run powershell.exe -NoProfile -File scripts/status.ps1 for a no-model status check; daily-status.mjs distinguishes not-due, outside-window, deferred-lock, quota, partial and completed work. Do not ask the model to repeat this audit daily. The same configured free provider can reject scheduled work after manual usage; avoid long manual DeepSeek sessions during 09:45-12:45. Fresh standalone sessions do not grant new provider quota. No paid fallback or quota evasion.
+
+Work budgets: measurement15, content35, distribution25 minutes, all bounded by 12:45. Full matched analytics Tuesday/Friday. Distribution off those days runs only when explicitly due. A daily trigger does not imply a new article daily; two evidence-qualified new pages per week maximum.
+
+Publication reports must distinguish metadata refreshes from new pages and provide URL, commit, live hub-card verification and actual indexing-request outcome. Existing metadata changes may not change the hub title.
+
+Git dry-run push was successful for both owner repositories November1. OpenCode scheduled permissions allow git add/commit and ordinary push in both, with external-directory scope for both configured paths. The active scheduled agent read authenticated Search Console November1; do not reopen its browser profile concurrently. Request Indexing and Validate Fix are authorized when eligible, with private receipts and Google limits honored. API inspection alone cannot request indexing.
