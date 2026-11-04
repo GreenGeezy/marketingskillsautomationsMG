@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "preflight": "node scripts/run.mjs measurement --preflight"
+    "preflight": "node scripts/run.mjs measurement --preflight",
+    "lock:status": "node scripts/lock-status.mjs"
   },
   "engines": {
     "node": ">=22"

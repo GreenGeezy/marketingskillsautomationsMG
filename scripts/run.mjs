@@ -1,11 +1,12 @@
 import {atomicJson,updateState,quotaFromLog} from './runtime-state.mjs';
-import {readFile,writeFile,mkdir,open,unlink,access,rename} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,open,unlink,access,rename,stat} from 'node:fs/promises';
 import {resolve,dirname,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {spawn} from 'node:child_process';
+import {spawn,execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {jobs,localClock,timeBudget,selectFree,validateConfig} from './policy.mjs';
 import {campaignContext} from './campaign.mjs';
+import {classifyLock,reconcileDeadLock} from './lock-guard.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const [job,...flags]=process.argv.slice(2);
@@ -45,10 +46,35 @@ let owned=false, retainLock=false, child, timer;
 const receipt={runId,job,startedAt:start.toISOString(),status:'starting',modelReceipt};
 async function saveReceipt(){await atomicJson(join(runs,`${runId}.json`),receipt);}
 async function currentUpdate(active){await updateState(join(state,'current.json'),c=>{if(active)c.activeRun={id:runId,owner:runId,job,startedAt:start.toISOString()};else if(c.activeRun?.id===runId||c.activeRun?.owner===runId)c.activeRun=null;});}
+function pidAlive(pid){try{process.kill(pid,0);return true;}catch(e){return e.code==='EPERM';}}
+function pidStartedAt(pid){
+  if(process.platform!=='win32')return null;
+  try{
+    const out=execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',`$p=Get-Process -Id ${Number(pid)} -ErrorAction SilentlyContinue; if($p){$p.StartTime.ToUniversalTime().ToString('o')}`],{encoding:'utf8',timeout:8000,windowsHide:true}).trim();
+    const t=Date.parse(out);return Number.isFinite(t)?t:null;
+  }catch{return null;}
+}
+async function openOwnLock(){const h=await open(lock,'wx');owned=true;await h.writeFile(JSON.stringify({owner:runId,startedAt:start.toISOString(),pid:process.pid,processStartedAt:new Date(Date.now()-process.uptime()*1000).toISOString(),executable:process.execPath}));await h.close();}
 
 try {
-  try{const h=await open(lock,'wx');owned=true;await h.writeFile(JSON.stringify({owner:runId,startedAt:start.toISOString(),pid:process.pid,processStartedAt:new Date(Date.now()-process.uptime()*1000).toISOString(),executable:process.execPath}));await h.close();}
-  catch(e){if(e.code==='EEXIST'){receipt.status='deferred-lock';console.log('Deferred: shared growth lock exists; retry within the window, never auto-expire its owner.');process.exitCode=75;}else throw e;}
+  try{await openOwnLock();}
+  catch(e){
+    if(e.code!=='EEXIST')throw e;
+    let lockMtimeMs=null;try{lockMtimeMs=(await stat(lock)).mtimeMs;}catch{}
+    // Another job may be running, or a crashed owner may have left its lock behind.
+    // Reconcile only when the recorded owner pid is provably gone or reused.
+    const reconciliation=await reconcileDeadLock({
+      lockPath:lock,archiveDir:state,now:new Date(),
+      classify:(lockFile,ctx)=>classifyLock(lockFile,{now:ctx.now,mtimeMs:lockMtimeMs,pidAlive,pidStartedAt}),
+      extra:{detectedBy:`${job} ${runId}`,runId,note:'Reconciled by the runner before it attempted to acquire the shared lock. See receipt lockReconciliation for the job that performed it.'}
+    });
+    if(reconciliation.reconciled){
+      receipt.lockReconciliation=reconciliation;
+      console.log(`Reconciled stale lock: ${reconciliation.reason} (${reconciliation.detail||'no detail'}); archived ${reconciliation.archive}`);
+      try{await openOwnLock();}catch(retry){if(retry.code!=='EEXIST')throw retry;}
+    }
+    if(!owned){receipt.status='deferred-lock';if(!receipt.lockReconciliation)receipt.lockDetail=reconciliation.reason+' '+(reconciliation.detail||'');console.log('Deferred: shared growth lock exists; retry within the window, never auto-expire its owner.');process.exitCode=75;}
+  }
   if(owned){
     // The daily marker is written BEFORE invoking the agent: ambiguous actions cannot be retried blindly.
     let reserved=false;
