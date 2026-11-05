@@ -60,6 +60,14 @@ test('banned words fail the gate', () => {
   assert.match(result.stdout, /leverage/);
 });
 
+test('the owner name fails the gate', () => {
+  const file = write('owner-name.md', 'The listing is published by Elijah Duffy and the app costs $7.99 per week.');
+  const result = run([file]);
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.match(result.stdout, /banned-word/);
+  assert.match(result.stdout, /elijah duffy/i);
+});
+
 test('throat-clearing and generic openers fail the gate', () => {
   const throat = write('throat.md', "Here's the thing: the light is bright.");
   const opener = write('opener.md', 'A good light purchase starts with a clear package.');

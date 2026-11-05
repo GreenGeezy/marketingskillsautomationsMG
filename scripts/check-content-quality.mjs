@@ -8,7 +8,9 @@ const BANNED_WORDS = [
   'robust', 'cutting-edge', 'paradigm shift', 'game changer', 'this is huge',
   'this changes everything', 'tapestry', 'realm', 'beacon', 'multifaceted',
   'meticulous', 'intricate', 'paramount', 'transformative', 'elevate', 'embark',
-  'supercharge', 'harness', 'ever-evolving'
+  'supercharge', 'harness', 'ever-evolving',
+  // Owner name must never appear in published content. Use the brand instead.
+  'elijah duffy'
 ];
 
 const EMPTY_PHRASES = [
