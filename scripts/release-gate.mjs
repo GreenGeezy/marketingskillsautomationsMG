@@ -3,13 +3,14 @@
 // Blocks a new-URL release unless index coverage has moved and the weekly cap allows it.
 // Usage: node scripts/release-gate.mjs [--state <path>] [--json]
 
+import {cadence, productReady} from './growtech-pilot.mjs';
 import {readFileSync, existsSync} from 'node:fs';
 import {resolve, dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 export const MIN_INDEXED = 31;
 export const WINDOW_DAYS = 14;
-export const WEEKLY_CAP = 2;
+export const WEEKLY_CAP = 3;
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -42,6 +43,14 @@ export function evaluateGate(state, now = new Date()) {
   const releasedThisWeek=Array.isArray(state?.publishedUrls)?state.publishedUrls.filter(x=>{const at=parseDate(x.publishedDate);return at&&at>=weekStart&&at<=now;}).length:null;
   if(releasedThisWeek===null) blocks.push('Missing dated publication ledger.');
   else if(releasedThisWeek>=WEEKLY_CAP) blocks.push('Weekly cap reached.');
+  if (Array.isArray(state?.publishedUrls) && state.publishedUrls.every(row=>row.url)) {
+    blocks.push(...cadence(state.publishedUrls,state.growtechReleases ?? [],now).blocks);
+  }
+  if (candidate?.campaignId === 'growtech-2026-11') {
+    if (!Array.isArray(candidate.productIds) || !candidate.productIds.length) blocks.push('Missing product IDs');
+    for (const id of candidate.productIds ?? [])
+      if (!productReady(id,state.productEvidence?.[id],now)) blocks.push('Product evidence required: '+id);
+  }
   if(!coverage.reportUpdatedAt) warnings.push('Source update date unknown; do not infer fresh coverage progress.');
   return {
     ok: blocks.length === 0,

@@ -15,7 +15,7 @@ $permissions = @(
   @{action='read'; resource='*'; effect='allow'},
   @{action='glob'; resource='*'; effect='allow'},
   @{action='grep'; resource='*'; effect='allow'},
-  @{action='edit'; resource='*'; effect='allow'},
+  @{action='edit'; resource='*'; effect='deny'},
   @{action='skill'; resource='*'; effect='allow'},
   @{action='webfetch'; resource='*'; effect='allow'},
   @{action='websearch'; resource='*'; effect='deny'},
@@ -29,29 +29,27 @@ foreach($directory in @($cfg.siteRepo,$cfg.stateDir,$repoRoot,(Join-Path $cfg.st
     $permissions += @{action='external_directory'; resource=($variant+'/*'); effect='allow'}
   }
 }
+foreach($variant in @($cfg.stateDir.Replace('\','/'),$cfg.stateDir.Replace('/','\'))){
+  $permissions += @{action='edit'; resource=($variant+'/*'); effect='allow'}
+  foreach($protected in @('growtech-product-evidence.json','growtech-releases.json','new-page-ledger.json','run-lock.json','run-lock.json.*','growtech-worktrees/*')){
+    $permissions += @{action='edit'; resource=($variant+'/'+$protected); effect='deny'}
+    $permissions += @{action='edit'; resource=($variant+'\'+$protected.Replace('/','\')); effect='deny'}
+  }
+}
 $permissions += @(
   @{action='shell'; resource='*'; effect='deny'},
+  @{action='shell'; resource='node --version'; effect='allow'},
+  @{action='shell'; resource='git --version'; effect='allow'},
+  @{action='shell'; resource='git push --dry-run origin HEAD:main'; effect='allow'},
+  @{action='shell'; resource='git -C * push --dry-run origin HEAD:main'; effect='allow'},
   @{action='shell'; resource='git status'; effect='allow'},
-  @{action='shell'; resource='npm run build'; effect='allow'},
-  @{action='shell'; resource='npm run lint'; effect='allow'},
   @{action='shell'; resource='git status *'; effect='allow'},
   @{action='shell'; resource='git diff *'; effect='allow'},
   @{action='shell'; resource='git log *'; effect='allow'},
   @{action='shell'; resource='git show *'; effect='allow'},
   @{action='shell'; resource='git fetch *'; effect='allow'},
-  @{action='shell'; resource='git switch *'; effect='allow'},
-  @{action='shell'; resource='git branch *'; effect='allow'},
-  @{action='shell'; resource='git add *'; effect='allow'},
-  @{action='shell'; resource='git commit *'; effect='allow'},
-  @{action='shell'; resource='git merge --ff-only *'; effect='allow'},
-  @{action='shell'; resource='git pull --ff-only *'; effect='allow'},
-  @{action='shell'; resource='git push origin *'; effect='allow'},
-  @{action='shell'; resource='node scripts/*'; effect='allow'},
   @{action='shell'; resource='node *check-content-quality.mjs*'; effect='allow'},
   @{action='shell'; resource='node *research-ios-competitors.mjs*'; effect='allow'},
-  @{action='shell'; resource='npm run build *'; effect='allow'},
-  @{action='shell'; resource='npm run lint *'; effect='allow'},
-  @{action='shell'; resource='npx playwright test *'; effect='allow'},
   @{action='shell'; resource='playwright-cli *'; effect='allow'},
   @{action='shell'; resource='seomator *'; effect='allow'},
   @{action='shell'; resource='rg *'; effect='allow'},
@@ -78,22 +76,11 @@ $permissions += @(
   @{action='shell'; resource='echo *'; effect='allow'},
   @{action='shell'; resource='Write-Output *'; effect='allow'},
   @{action='shell'; resource='Test-Path *'; effect='allow'},
-  @{action='shell'; resource='Copy-Item *'; effect='allow'},
   @{action='shell'; resource='git -C * status *'; effect='allow'},
   @{action='shell'; resource='git -C * diff *'; effect='allow'},
   @{action='shell'; resource='git -C * log *'; effect='allow'},
   @{action='shell'; resource='git -C * show *'; effect='allow'},
   @{action='shell'; resource='git -C * fetch *'; effect='allow'},
-  @{action='shell'; resource='git -C * switch *'; effect='allow'},
-  @{action='shell'; resource='git -C * branch *'; effect='allow'},
-  @{action='shell'; resource='git -C * add *'; effect='allow'},
-  @{action='shell'; resource='git -C * commit *'; effect='allow'},
-  @{action='shell'; resource='git -C * merge --ff-only *'; effect='allow'},
-  @{action='shell'; resource='git -C * pull --ff-only *'; effect='allow'},
-  @{action='shell'; resource='git -C * push origin *'; effect='allow'},
-  @{action='shell'; resource='node -e *'; effect='allow'},
-  @{action='shell'; resource='node --test *'; effect='allow'},
-  @{action='shell'; resource='npm test *'; effect='allow'},
   @{action='shell'; resource='node_modules\\.bin\\playwright-cli*'; effect='allow'},
   @{action='shell'; resource='node_modules/.bin/playwright-cli*'; effect='allow'},
   @{action='shell'; resource='git push *--force*'; effect='deny'},
@@ -121,7 +108,7 @@ Set-Location -LiteralPath $cfg.siteRepo
 if($SmokeTest){
   & $cfg.opencodePath run --standalone --auto --model $cfg.model --agent build --format json 'This is a connectivity check only. Do not call any tools or read any files. Reply exactly MGB_FREE_MODEL_OK.'
 } elseif($ShellSmokeTest){
-  & $cfg.opencodePath run --standalone --auto --model $cfg.model --agent build --format json 'Use the shell tool to run exactly two separate commands: git status --short . and playwright-cli --help . Report their exit status briefly. Do not open a browser, read files, edit anything or run any other command.'
+  & $cfg.opencodePath run --standalone --auto --model $cfg.model --agent build --format json ("Capability smoke only. Use separate shell calls without separators for node --version, git --version, git status --short ., git push --dry-run origin HEAD:main, git -C `"$repoRoot`" push --dry-run origin HEAD:main, and playwright-cli --help. Follow the search-console reference to open the persistent authenticated browser at the MasterGrowbot Search Console property and read only its heading. Continue independent checks after any denial. No submissions or file edits. Report each check.")
 } else {
   if(-not $ContextPath){throw 'ContextPath required'}
   & $cfg.opencodePath run --standalone --auto --model $cfg.model --agent build --format json --file $ContextPath 'Execute the attached scheduled job now. Follow its result contract and deadline. Do not ask routine approval questions. Use only free configured tools and preserve release checks.'

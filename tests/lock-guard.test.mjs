@@ -38,9 +38,9 @@ test('the current process always keeps its own lock',()=>{
   assert.equal(classifyLock(lockOf({pid:process.pid}),probes({pidAlive:()=>false})).reason,'owned-by-this-process');
 });
 
-test('unreadable lock contents are only expired once older than any possible run',()=>{
+test('unreadable lock contents always require reconciliation',()=>{
   assert.equal(classifyLock(null,probes({mtimeMs:now-5*60000})).stale,false);
-  assert.equal(classifyLock(null,probes({mtimeMs:now-120*60000})).stale,true);
+  assert.equal(classifyLock(null,probes({mtimeMs:now-120*60000})).stale,false);
   assert.equal(classifyLock(null,probes({mtimeMs:null})).stale,false);
   assert.equal(classifyLock({pid:'4242'},probes({mtimeMs:now-5*60000})).stale,false);
 });

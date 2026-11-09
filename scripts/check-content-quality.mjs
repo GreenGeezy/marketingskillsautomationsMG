@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import ts from 'typescript';
 import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
@@ -167,13 +168,60 @@ function excerpt(text) {
   return clean.length > 160 ? `${clean.slice(0, 157)}...` : clean;
 }
 
-function scanFile(file, options, addedLines, explicit) {
+
+function typescriptGuides(file, options, addedLines) {
+  const source = ts.createSourceFile(file, fs.readFileSync(file,'utf8'), ts.ScriptTarget.Latest, true);
+  const reports = [];
+  const fields = new Set(['intro','heading','body','bodyHtml','question','answer']);
+  const propertyName = node => node.name && (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+    ? node.name.text : '';
+  const isString = node => ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node);
+  const lineOf = position => source.getLineAndCharacterOfPosition(position).line + 1;
+  const visit = node => {
+    if (ts.isObjectLiteralExpression(node)) {
+      const slug = node.properties.find(property => ts.isPropertyAssignment(property) &&
+        propertyName(property)==='slug' && isString(property.initializer));
+      if (slug) {
+        const first = lineOf(node.getStart(source));
+        const last = lineOf(node.end);
+        if (addedLines && ![...addedLines].some(line => line>=first && line<=last)) return;
+        const values = [];
+        const collect = child => {
+          if (ts.isPropertyAssignment(child) && fields.has(propertyName(child))) {
+            const value = child.initializer;
+            if (isString(value)) values.push(value.text);
+            else if (ts.isTemplateExpression(value)) values.push(value.head.text,...value.templateSpans.map(span=>span.literal.text));
+          }
+          ts.forEachChild(child,collect);
+        };
+        collect(node);
+        const prose = values.join('\n');
+        const words = (prose.replace(/<[^>]+>/g,' ').replace(/\]\([^)]+\)/g,']')
+          .replace(/https?:\/\/\S+/g,'').match(/[A-Za-z0-9][A-Za-z0-9'’–-]*/g) ?? []).length;
+        const article = file+'#'+slug.initializer.text;
+        const errors = [];
+        const error = (rule,message) => errors.push({file:article,line:first,rule,message,excerpt:slug.initializer.text});
+        if (options.minWords>0 && words<options.minWords)
+          error('word-count','Individual guide below minimum: '+words);
+        if (options.requireCta && !/apps\.apple\.com|play\.google\.com|\/checkout|\/grow-tech/.test(prose))
+          error('missing-cta','Individual guide needs a product CTA');
+        reports.push({file:article,words,isArticle:true,errors,warnings:[],legacy:{emDashes:0,mdashEntities:0}});
+        return;
+      }
+    }
+    ts.forEachChild(node,visit);
+  };
+  visit(source);
+  return reports;
+}
+
+function scanFile(file, options, addedLines, explicit, parsedGuide = false) {
   const text = fs.readFileSync(file, 'utf8');
   const errors = [];
   const warnings = [];
   const legacy = {emDashes: 0, mdashEntities: 0};
   const lines = text.split(/\r?\n/);
-  const isArticle = explicit || isArticleFile(file);
+  const isArticle = !parsedGuide && (explicit || isArticleFile(file));
   const isAdded = (lineNumber) => addedLines === null || addedLines.has(lineNumber);
   let inFence = false;
   let words = 0;
@@ -284,22 +332,9 @@ function main() {
   for (const entry of entries) {
     const file = path.resolve(repo, entry.file);
     if (!fs.existsSync(file) || !fs.statSync(file).isFile()) continue;
-    reports.push(scanFile(file, options, entry.addedLines, !options.changed));
-    if(path.basename(file)==='growGuides.ts'){
-      const source=fs.readFileSync(file,'utf8');
-      const starts=[...source.matchAll(/\{\s*"slug"\s*:\s*"([^"]+)"/g)];
-      for(let i=0;i<starts.length;i++){
-        const start=starts[i].index,end=starts[i+1]?.index??source.length;
-        const first=source.slice(0,start).split('\n').length;
-        const last=first+source.slice(start,end).split('\n').length;
-        if(options.changed&&entry.addedLines&&!Array.from(entry.addedLines).some(n=>n>=first&&n<last))continue;
-        const body=source.slice(start,end);const words=(body.match(/[A-Za-z0-9][A-Za-z0-9'’-]*/g)||[]).length;
-        const errors=[];
-        if(options.minWords>0&&words<options.minWords)errors.push({file:file+'#'+starts[i][1],line:first,rule:'word-count',message:'Individual guide below minimum: '+words,excerpt:starts[i][1]});
-        if(options.requireCta&&!/apps\.apple\.com|play\.google\.com|\/checkout|\/grow-tech/.test(body))errors.push({file:file+'#'+starts[i][1],line:first,rule:'missing-cta',message:'Individual guide needs a product CTA',excerpt:starts[i][1]});
-        reports.push({file:file+'#'+starts[i][1],words,isArticle:true,errors,warnings:[],legacy:{emDashes:0,mdashEntities:0}});
-      }
-    }
+    const guides = /\.tsx?$/.test(file) ? typescriptGuides(file,options,entry.addedLines) : [];
+    reports.push(scanFile(file, options, entry.addedLines, !options.changed, guides.length > 0));
+    reports.push(...guides);
   }
 
   const errors = reports.flatMap((report) => report.errors);

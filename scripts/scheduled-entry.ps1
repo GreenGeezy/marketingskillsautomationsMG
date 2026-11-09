@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][ValidateSet('measurement','content','distribution')][string]$Job,[Parameter(Mandatory)][string]$NodePath)
+param([Parameter(Mandatory)][ValidateSet('measurement','content','distribution')][string]$Job,[Parameter(Mandatory)][string]$NodePath,[switch]$CapabilityCheck)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $root
@@ -12,6 +12,7 @@ try {
  $info=New-Object System.Diagnostics.ProcessStartInfo
  $info.FileName=$NodePath
  $info.Arguments='"'+(Join-Path $PSScriptRoot 'run.mjs')+'" '+$Job
+ if($CapabilityCheck){ $info.Arguments+=' --capability-check' }
  $info.WorkingDirectory=$root
  $info.UseShellExecute=$false
  $info.CreateNoWindow=$true
@@ -26,6 +27,13 @@ try {
  $stdout.Result | Out-File $log -Append -Encoding utf8
  $stderr.Result | Out-File $log -Append -Encoding utf8
  $code=$process.ExitCode
-} catch { $_.Exception.Message | Out-File $log -Append -Encoding utf8 }
+} catch {
+  $_.Exception.Message | Out-File $log -Append -Encoding utf8
+  $failure = @{job=$Job;at=[DateTime]::UtcNow.ToString('o');status='setup-failed';error=$_.Exception.Message}
+  $failure | ConvertTo-Json | Out-File (Join-Path $logDir ('setup-'+[Guid]::NewGuid().ToString()+'.json')) -Encoding utf8
+  $code=75
+}
 "[$([DateTime]::UtcNow.ToString('o'))] end job=$Job exit=$code" | Out-File $log -Append -Encoding utf8
-exit $code
+# Only setup and lock deferrals are eligible for Windows' bounded restart policy.
+if($CapabilityCheck -or $code -eq 75){exit $code}
+exit 0

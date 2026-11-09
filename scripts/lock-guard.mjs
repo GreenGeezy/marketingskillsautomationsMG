@@ -46,19 +46,15 @@ export function classifyLock(lock, {
     ? now - Date.parse(lock.startedAt)
     : (Number.isFinite(mtimeMs) ? now - mtimeMs : null);
 
-  const pid = lock && Number.isInteger(lock.pid) ? lock.pid : null;
+  const pid = lock && Number.isInteger(lock.pid) && lock.pid > 0 ? lock.pid : null;
   if (!lock || !lock.owner || !pid) {
-    // Unusable contents cannot prove an active owner. Expire only once the file is
-    // older than any possible run, otherwise keep deferring.
-    if (ageMs === null) return {stale: false, reason: 'unreadable-lock-unknown-age'};
-    if (ageMs < ageCheckMs) return {stale: false, reason: 'unreadable-lock-within-budget', detail: `${Math.round(ageMs / 60000)} min old`};
-    return {stale: true, reason: 'unreadable-lock-beyond-budget', detail: `${Math.round(ageMs / 60000)} min old`};
+    return {stale: false, reason: 'unreadable-lock-reconcile-required'};
   }
 
   if (pid === process.pid) return {stale: false, reason: 'owned-by-this-process'};
 
   let alive = false;
-  try { alive = pidAlive(pid); } catch { alive = false; }
+  try { alive = pidAlive(pid); } catch { return {stale:false, reason:'owner-probe-failed'}; }
   if (!alive) return {stale: true, reason: 'owner-pid-gone', detail: `pid ${pid} is not running`};
 
   const recorded = parseStartedAt(lock.processStartedAt);

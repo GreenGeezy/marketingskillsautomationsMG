@@ -1,11 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {timeBudget,localClock,requireFree,validateConfig,selectFree} from '../scripts/policy.mjs';
-test('pre-inference fallback only selects verified zero-cost allowlisted models',()=>{
+test('pre-inference pricing failure does not select another model',()=>{
   const preferred='opencode/deepseek-v4.1-flash-free';
   const fallback='opencode/glm-5.3-flash-free';
   const cat={opencode:{models:{'deepseek-v4.1-flash-free':{cost:{input:1,output:0}},'glm-5.3-flash-free':{cost:{input:0,output:0}}}}};
-  assert.equal(selectFree(cat,preferred).id,fallback);
+  assert.throws(()=>selectFree(cat,preferred));
+  cat.opencode.models['deepseek-v4.1-flash-free'].cost.input=0;
+  assert.equal(selectFree(cat,preferred).id,preferred);
+  cat.opencode.models['deepseek-v4.1-flash-free'].cost.input=1;
   cat.opencode.models['glm-5.3-flash-free'].cost.output=1;
   assert.throws(()=>selectFree(cat,preferred));
   assert.throws(()=>selectFree({},'unknown/model'));

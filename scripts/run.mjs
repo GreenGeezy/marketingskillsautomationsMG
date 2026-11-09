@@ -1,126 +1,210 @@
-import {atomicJson,updateState,quotaFromLog} from './runtime-state.mjs';
-import {readFile,writeFile,mkdir,open,unlink,access,rename,stat} from 'node:fs/promises';
-import {resolve,dirname,join} from 'node:path';
+import {atomicJson, updateState, quotaFromLog} from './runtime-state.mjs';
+import {readFile, writeFile, mkdir, open, unlink, access} from 'node:fs/promises';
+import {resolve, dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {spawn,execFileSync} from 'node:child_process';
+import {spawn} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
-import {jobs,localClock,timeBudget,selectFree,validateConfig} from './policy.mjs';
-import {campaignContext} from './campaign.mjs';
-import {classifyLock,reconcileDeadLock} from './lock-guard.mjs';
+import {jobs, localClock, timeBudget, selectFree, validateConfig} from './policy.mjs';
+import {discoveryDue, pilotState, readJson} from './growtech-pilot.mjs';
+import {publishDraft, verifyReleases} from './growtech-release.mjs';
 
-const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
-const [job,...flags]=process.argv.slice(2);
-const preflight=flags.includes('--preflight');
-if(!jobs.includes(job)) throw new Error('Usage: node scripts/run.mjs measurement|content|distribution [--preflight]');
-const configPath=resolve(root,'config.local.json');
-async function invocation(status,details={}){const folder=join(root,'output','scheduler');await mkdir(folder,{recursive:true});await atomicJson(join(folder,Date.now()+'-'+job+'-invocation.json'),{job,status,at:new Date().toISOString(),...details});}
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const [job, ...flags] = process.argv.slice(2);
+const preflight = flags.includes('--preflight');
+const smoke = flags.includes('--capability-check');
+const configPath = join(root, 'config.local.json');
+const start = new Date();
+const day = localClock(start).day;
+const runId = day + '-' + job + '-' + randomUUID();
+const receipt = {job,runId,startedAt:start.toISOString(),status:'setup-failed'};
+let receiptPath = join(root,'output','scheduler',runId+'.json');
+let lock, owned = false, retainLock = false, currentFile, active = false;
 
-process.on('uncaughtException',async error=>{
- try{const folder=join(root,'output','scheduler');await mkdir(folder,{recursive:true});await atomicJson(join(folder,Date.now()+'-'+job+'-setup.json'),{job,status:'setup-failed',error:error.message,at:new Date().toISOString()});}finally{console.error(error.message);process.exitCode=1;}
-});
-const config=JSON.parse((await readFile(configPath,'utf8')).replace(/^\uFEFF/,''));
-validateConfig(config);
-if(!preflight && timeBudget(new Date(),config.maxMinutes)<60000){await invocation('outside-window');console.log('Skipped: outside the allowed window or less than one minute remains.');process.exit(0);}
-for(const path of [config.siteRepo,config.stateDir,config.opencodePath]) await access(path);
-if(!preflight){
- let cooldown;try{cooldown=JSON.parse(await readFile(join(config.stateDir,'quota-cooldown.json'),'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
- if(cooldown&&new Date(cooldown.retryAt)>new Date()){await invocation('quota-cooldown',{retryAt:cooldown.retryAt});console.log('Deferred: provider cooldown until '+cooldown.retryAt);process.exit(0);}
- const weekday=new Intl.DateTimeFormat('en-US',{timeZone:'America/Mexico_City',weekday:'short'}).format(new Date());
- if(job==='distribution'&&!['Tue','Fri'].includes(weekday)){
- let due=[];try{due=JSON.parse(await readFile(join(config.stateDir,'distribution-due.json'),'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
- if(!Array.isArray(due)||!due.some(x=>x.status==='due'&&new Date(x.dueAt)<=new Date())){await invocation('no-due-work');console.log('Skipped: no due distribution work; no inference.');process.exit(0);}
- }
+async function checkedModel(config) {
+  const response = await fetch('https://models.dev/api.json',{signal:AbortSignal.timeout(20000)});
+  if (!response.ok) throw new Error('Model catalog unavailable');
+  return selectFree(await response.json(),config.model);
 }
 
-const catalog=await fetch('https://models.dev/api.json',{signal:AbortSignal.timeout(20000)}).then(r=>{if(!r.ok)throw new Error('Model catalog unavailable');return r.json();});
-const modelReceipt=selectFree(catalog,config.model);
-if(preflight){ console.log(JSON.stringify({status:'preflight-passed',modelReceipt,window:'09:45–12:45 America/Mexico_City',note:'No inference, authentication, publication or scheduler activation tested.'},null,2)); process.exit(0); }
-if(!config.enabled||!config.oldAutomationPausedVerified||!config.connectionsVerified) throw new Error('Setup incomplete: enabled, oldAutomationPausedVerified and connectionsVerified must be true after setup checks.');
-const start=new Date(), budget=timeBudget(start,job==='content'?Math.min(35,config.maxMinutes):job==='measurement'?Math.min(15,config.maxMinutes):Math.min(25,config.maxMinutes));
-if(budget<60000){console.log('Skipped: outside 09:45–12:45 Mexico City or less than one minute remains.');process.exit(0);}
-const runId=`${localClock(start).day}-${job}-${randomUUID()}`;
-const state=resolve(config.stateDir), runs=join(state,'opencode-runs');
-await mkdir(runs,{recursive:true});
-const lock=join(state,'run-lock.json'), marker=join(runs,`${localClock(start).day}-${job}.json`);
-let owned=false, retainLock=false, child, timer;
-const receipt={runId,job,startedAt:start.toISOString(),status:'starting',modelReceipt};
-async function saveReceipt(){await atomicJson(join(runs,`${runId}.json`),receipt);}
-async function currentUpdate(active){await updateState(join(state,'current.json'),c=>{if(active)c.activeRun={id:runId,owner:runId,job,startedAt:start.toISOString()};else if(c.activeRun?.id===runId||c.activeRun?.owner===runId)c.activeRun=null;});}
-function pidAlive(pid){try{process.kill(pid,0);return true;}catch(e){return e.code==='EPERM';}}
-function pidStartedAt(pid){
-  if(process.platform!=='win32')return null;
-  try{
-    const out=execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',`$p=Get-Process -Id ${Number(pid)} -ErrorAction SilentlyContinue; if($p){$p.StartTime.ToUniversalTime().ToString('o')}`],{encoding:'utf8',timeout:8000,windowsHide:true}).trim();
-    const t=Date.parse(out);return Number.isFinite(t)?t:null;
-  }catch{return null;}
+async function runAgent(config, contextFile, deadline, logPath) {
+  const log = await open(logPath,'wx');
+  let timer;
+  try {
+    const args = ['-NoProfile','-NonInteractive','-File',join(root,'scripts','invoke-opencode.ps1'),
+      '-ConfigPath',configPath,'-SelectedModel',receipt.modelReceipt.id,
+      ...(smoke ? ['-ShellSmokeTest'] : ['-ContextPath',contextFile])];
+    const child = spawn('powershell.exe',args,{
+      cwd:config.siteRepo,windowsHide:true,stdio:['ignore',log.fd,log.fd],
+      env:{...process.env,OPENCODE_CONFIG_DIR:join(root,'.opencode'),MGB_AUTOMATION_ROOT:root},
+    });
+    timer = setTimeout(()=>{
+      retainLock=true;
+      const killer=spawn('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true});
+      killer.on('error',()=>{});
+    },Math.max(0,+deadline-Date.now()));
+    return await new Promise((done,reject)=>{
+      child.once('error',reject);
+      child.once('close',(code,signal)=>done({code,signal}));
+    });
+  } finally {
+    clearTimeout(timer);
+    await log.close();
+  }
 }
-async function openOwnLock(){const h=await open(lock,'wx');owned=true;await h.writeFile(JSON.stringify({owner:runId,startedAt:start.toISOString(),pid:process.pid,processStartedAt:new Date(Date.now()-process.uptime()*1000).toISOString(),executable:process.execPath}));await h.close();}
+
+async function run() {
+  if (!jobs.includes(job)) throw new Error('Expected measurement, content or distribution');
+  const config = await readJson(configPath);
+  validateConfig(config);
+  if (preflight) {
+    console.log(JSON.stringify({status:'preflight-passed',modelReceipt:await checkedModel(config)},null,2));
+    return;
+  }
+  const limit = {measurement:15,content:35,distribution:25}[job];
+  const budget = smoke ? 180000 : timeBudget(start,Math.min(limit,config.maxMinutes));
+  if (budget<60000) { receipt.status='outside-window'; return; }
+  if (!config.enabled || !config.oldAutomationPausedVerified || !config.connectionsVerified)
+    throw new Error('Setup incomplete');
+  for (const path of [config.siteRepo,config.stateDir,config.opencodePath]) await access(path);
+  const state = config.stateDir;
+  const runs = join(state,'opencode-runs');
+  await mkdir(runs,{recursive:true});
+  receiptPath = join(runs,runId+'.json');
+  lock = join(state,'run-lock.json');
+  const identity = {owner:runId,pid:process.pid,startedAt:start.toISOString(),
+    processStartedAt:new Date(Date.now()-process.uptime()*1000).toISOString(),phase:'preparing'};
+  try {
+    const handle = await open(lock,'wx');
+    owned=true;
+    try { await handle.writeFile(JSON.stringify(identity)); } finally { await handle.close(); }
+  } catch(error) {
+    if (error.code!=='EEXIST') throw error;
+    receipt.status='deferred-lock';
+    receipt.error='Shared lock present. Check owner, descendants and pending external actions before manual reconciliation.';
+    process.exitCode=75;
+    return;
+  }
+
+  const deadline = new Date(+start+budget);
+  const marker = join(runs,day+'-'+job+'.json');
+  if (!smoke && await readJson(marker,null)) { receipt.status='already-attempted'; return; }
+  const task = !smoke && job==='content' ? await pilotState(state) : null;
+  if (task?.action==='no-due-work') {
+    receipt.status='no-due-work';
+    receipt.schedule=task.schedule;
+    return;
+  }
+  if (!smoke && job!=='content') {
+    const release = await verifyReleases(state);
+    if (release) receipt.release=release;
+    const queue = await readJson(join(state,'gsc-url-queue.json'),{queue:[]});
+    const issues = await readJson(join(state,'gsc-issues.json'),{issues:[]});
+    const due = await readJson(join(state,'distribution-due.json'),[]);
+    const weekday = new Intl.DateTimeFormat('en-US',{timeZone:config.timezone,weekday:'short'}).format(start);
+    const issueDue = job==='measurement' && issues.issues.some(issue=>
+      issue.nextCheckAt && Date.parse(issue.nextCheckAt)<=Date.now() &&
+      !['resolved','passed'].includes(issue.status));
+    if (!['Tue','Fri'].includes(weekday) && !discoveryDue(queue) && !issueDue &&
+        !(job==='distribution' && due.some(item=>item.status==='due' && Date.parse(item.dueAt)<=Date.now()))) {
+      receipt.status='no-due-work';
+      return;
+    }
+  }
+  if (task?.action!=='publish') {
+    const cooldown = await readJson(join(state,'quota-cooldown.json'),{});
+    if (Date.parse(cooldown.retryAt)>Date.now()) {
+      receipt.status='quota-cooldown';
+      receipt.retryAt=cooldown.retryAt;
+      return;
+    }
+    receipt.modelReceipt=await checkedModel(config);
+  }
+
+  if (+deadline-Date.now()<60000) { receipt.status='outside-window'; return; }
+  receipt.status='running';
+  await atomicJson(receiptPath,receipt);
+  if (!smoke) {
+    await writeFile(marker,JSON.stringify({runId,status:'attempted',startedAt:start.toISOString()}),{flag:'wx'});
+    currentFile=join(state,'current.json');
+    await updateState(currentFile,value=>{value.activeRun={id:runId,owner:runId,job,startedAt:start.toISOString()};});
+    active=true;
+  }
+  if (task?.action==='publish') {
+    await atomicJson(lock,{...identity,phase:'release-started'});
+    receipt.release=await publishDraft(config,root,task,deadline);
+    receipt.status='completed';
+  } else {
+    const resultFile = join(runs,runId+'.result.json');
+    const contextFile = join(runs,runId+'.context.md');
+    if (!smoke) {
+      if (task) await mkdir(dirname(task.draftPath),{recursive:true});
+      const policy = await readFile(join(root,'docs','RECOVERY-POLICY.md'),'utf8');
+      const instructions = await readFile(join(root,'jobs',job+'.md'),'utf8');
+      const context = {runId,job,stateDir:state,siteRepo:config.siteRepo,automationRepo:root,resultFile,
+        deadlineUTC:deadline.toISOString(),weekday:new Intl.DateTimeFormat('en-US',{timeZone:config.timezone,weekday:'short'}).format(start),task};
+      await writeFile(contextFile,JSON.stringify(context,null,2)+'\n\n'+policy+'\n\n'+instructions);
+    }
+    const logPath = join(runs,runId+'.log');
+    await atomicJson(lock,{...identity,phase:'agent-started'});
+    receipt.exit = await runAgent(config,contextFile,deadline,logPath);
+    if (retainLock) {
+      receipt.status='timed-out-reconcile-required';
+      throw new Error('Deadline reached. Reconcile child processes and external actions.');
+    }
+    const quota = quotaFromLog(await readFile(logPath,'utf8'));
+    if (quota) {
+      await atomicJson(join(state,'quota-cooldown.json'),quota);
+      receipt.status='quota-exhausted';
+      return;
+    }
+    if (receipt.exit.code!==0) throw new Error('OpenCode exited '+receipt.exit.code);
+    if (smoke) {
+      receipt.status='capability-check-finished';
+      receipt.logPath=logPath;
+      return;
+    }
+    const result = await readJson(resultFile,null).catch(()=>null);
+    if (result?.runId!==runId || result.job!==job || !['completed','partial','blocked'].includes(result.status) ||
+        !Array.isArray(result.actions) || !Array.isArray(result.blockers)) {
+      receipt.status='missing-result';
+      throw new Error('Missing or invalid result contract');
+    }
+    if (task?.action === 'draft') {
+      const draft = await readJson(task.draftPath,null);
+      if (draft) {
+        draft.review ??= {};
+        draft.review.checkedAt=new Date().toISOString();
+        draft.review.nextReviewAt=new Date(Date.now()+7*86400000).toISOString();
+        await atomicJson(task.draftPath,draft);
+      }
+    }
+    receipt.status=result.status;
+    receipt.resultFile=resultFile;
+  }
+  await atomicJson(marker,{runId,status:receipt.status,finishedAt:new Date().toISOString()});
+}
 
 try {
-  try{await openOwnLock();}
-  catch(e){
-    if(e.code!=='EEXIST')throw e;
-    let lockMtimeMs=null;try{lockMtimeMs=(await stat(lock)).mtimeMs;}catch{}
-    // Another job may be running, or a crashed owner may have left its lock behind.
-    // Reconcile only when the recorded owner pid is provably gone or reused.
-    const reconciliation=await reconcileDeadLock({
-      lockPath:lock,archiveDir:state,now:new Date(),
-      classify:(lockFile,ctx)=>classifyLock(lockFile,{now:ctx.now,mtimeMs:lockMtimeMs,pidAlive,pidStartedAt}),
-      extra:{detectedBy:`${job} ${runId}`,runId,note:'Reconciled by the runner before it attempted to acquire the shared lock. See receipt lockReconciliation for the job that performed it.'}
-    });
-    if(reconciliation.reconciled){
-      receipt.lockReconciliation=reconciliation;
-      console.log(`Reconciled stale lock: ${reconciliation.reason} (${reconciliation.detail||'no detail'}); archived ${reconciliation.archive}`);
-      try{await openOwnLock();}catch(retry){if(retry.code!=='EEXIST')throw retry;}
-    }
-    if(!owned){receipt.status='deferred-lock';if(!receipt.lockReconciliation)receipt.lockDetail=reconciliation.reason+' '+(reconciliation.detail||'');console.log('Deferred: shared growth lock exists; retry within the window, never auto-expire its owner.');process.exitCode=75;}
+  await run();
+} catch(error) {
+  if (receipt.status==='running') receipt.status='failed';
+  receipt.error=error.message;
+  process.exitCode=receipt.status==='setup-failed' ? 75 : 1;
+  console.error(error.message);
+} finally {
+  if (!preflight) {
+    receipt.finishedAt=new Date().toISOString();
+    await mkdir(dirname(receiptPath),{recursive:true});
+    await atomicJson(receiptPath,receipt);
+    console.log(JSON.stringify({status:receipt.status,receiptPath}));
   }
-  if(owned){
-    // The daily marker is written BEFORE invoking the agent: ambiguous actions cannot be retried blindly.
-    let reserved=false;
-    try{const h=await open(marker,'wx');await h.writeFile(JSON.stringify({runId,status:'attempted',startedAt:start.toISOString()}));await h.close();reserved=true;}
-    catch(e){if(e.code==='EEXIST'){receipt.status='already-attempted';console.log('Skipped: this job already attempted today. Read receipt before any manual reconciliation.');}else throw e;}
-    if(reserved){
-      await currentUpdate(true);
-      const resultFile=join(runs,`${runId}.result.json`), contextFile=join(runs,`${runId}.context.md`);
-      let compact={};try{const c=JSON.parse((await readFile(join(state,'recovery-context.json'),'utf8')).replace(/^\uFEFF/,''));compact={updatedAt:c.updatedAt,window:c.window,recoveryQueue:(c.recoveryQueue||[]).filter(x=>!['done','completed'].includes(x.status)).slice(0,3)};}catch(e){if(e.code!=='ENOENT')throw e;}
-      const instructions='Compact handoff (read full state fields only when needed):\n'+JSON.stringify(compact)+'\n'+await readFile(join(root,'docs/RECOVERY-POLICY.md'),'utf8')+'\n'+campaignContext(start)+'\n\n'+await readFile(join(root,'jobs',`${job}.md`),'utf8');
-      const deadline=new Date(start.getTime()+budget);
-      await writeFile(contextFile,`# Scheduled run context\nrunId: ${runId}\njob: ${job}\nstateDir: ${state}\nsiteRepo: ${config.siteRepo}\nautomationRepo: ${root}\nresultFile: ${resultFile}\ndeadlineUTC: ${deadline.toISOString()}\nThe runner owns the shared lock. Do not reacquire it. Complete routine authorized work without questions. Read ${root.replaceAll('\\','/')}/AGENTS.md and the mastergrowbot-acquisition skill.\n\n${instructions}`);
-      receipt.status='running';await saveReceipt();
-      const remaining=deadline.getTime()-Date.now();
-      if(remaining<60000){receipt.status='partial';throw new Error('Preparation consumed the remaining window; no inference started.');}
-      const log=await open(join(runs,`${runId}.log`),'wx');
-      child=spawn('powershell.exe',['-NoProfile','-NonInteractive','-File',join(root,'scripts','invoke-opencode.ps1'),'-ConfigPath',configPath,'-ContextPath',contextFile,'-SelectedModel',modelReceipt.id],{cwd:config.siteRepo,windowsHide:true,stdio:['ignore',log.fd,log.fd],env:{...process.env,OPENCODE_CONFIG_DIR:join(root,'.opencode'),MGB_AUTOMATION_ROOT:root}});
-      let timedOut=false;
-      timer=setTimeout(()=>{
-        timedOut=true;retainLock=true;
-        if(child.pid){const killer=spawn('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true});killer.on('error',()=>{});}
-      },Math.max(0,deadline.getTime()-Date.now()));
-      const exit=await new Promise((res,rej)=>{child.on('error',rej);child.on('exit',(code,signal)=>res({code,signal}));});
-      clearTimeout(timer);await log.close();receipt.exit=exit;
-      if(timedOut){receipt.status='timed-out-reconcile-required';throw new Error('Deadline reached; process tree termination requested. Lock retained until reconciliation.');}
-      const quota=quotaFromLog(await readFile(join(runs,`${runId}.log`),'utf8'));
-      if(quota){await atomicJson(join(state,'quota-cooldown.json'),quota);receipt.status='quota-exhausted';throw new Error('Free usage exhausted; cooldown saved, no replay.');}
-      if(exit.code!==0){receipt.status='failed';throw new Error(`OpenCode exited ${exit.code}; inspect private log.`);}
-      let result;try{result=JSON.parse((await readFile(resultFile,'utf8')).replace(/^\uFEFF/,''));}catch{receipt.status='missing-result';throw new Error('CLI exit alone is not success: required result JSON missing or invalid.');}
-      if(result.runId!==runId||result.job!==job||!['completed','partial','blocked'].includes(result.status)||!Array.isArray(result.actions)||!Array.isArray(result.blockers)) throw new Error('Invalid result contract; inspect logs before retry.');
-      receipt.status=result.status;receipt.resultFile=resultFile;
-      await writeFile(marker,JSON.stringify({runId,status:receipt.status,finishedAt:new Date().toISOString()},null,2));
-    }
-  }
-} catch(e){receipt.error=e.message;if(receipt.status==='running'||receipt.status==='starting')receipt.status='failed';process.exitCode=1;console.error(e.message);}
-finally {
-  clearTimeout(timer);
-  {
-    try{receipt.finishedAt=new Date().toISOString();await saveReceipt();}
-    catch(e){console.error(`receipt write failed: ${e.message}`);}
-    if(owned&&!retainLock){
-      try{await currentUpdate(false);}catch(e){console.error(`current.json update failed: ${e.message}`);}
-      try{
-        const existing=JSON.parse(await readFile(lock,'utf8'));
-        if(existing.owner===runId)await unlink(lock);
-      }catch(e){console.error(`lock release failed: ${e.message}`);}
+  if (owned && !retainLock) {
+    try {
+      if (active) await updateState(currentFile,value=>{
+        if (value.activeRun?.owner===runId) value.activeRun=null;
+      });
+    } finally {
+      if ((await readJson(lock,null))?.owner===runId) await unlink(lock);
     }
   }
 }

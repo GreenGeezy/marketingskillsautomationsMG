@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {localClock} from './policy.mjs';
 export function classifyDay(entries){
  const sorted=[...entries].sort((a,b)=>String(a.at||a.startedAt||'').localeCompare(String(b.at||b.startedAt||'')));
- const substantive=sorted.filter(e=>['completed','partial','blocked','failed','quota-exhausted','missing-result','timed-out-reconcile-required','running'].includes(e.status));
+ const substantive=sorted.filter(e=>['setup-failed','completed','partial','blocked','failed','quota-exhausted','missing-result','timed-out-reconcile-required','running'].includes(e.status));
  const last=substantive.at(-1)||sorted.at(-1);
  if(!last)return {status:'no-receipt'};
  return {status:last.status,at:last.at||last.startedAt||null,finishedAt:last.finishedAt||null,runId:last.runId||null,error:last.error||null,changedUrls:last.result?.changedUrls||[],commits:last.result?.commits||[],productionVerified:last.result?.productionVerified??null};
@@ -25,7 +25,7 @@ export async function dailyReport(root,days=7,now=new Date()){
  if(outcome.status==='no-receipt'&&day===today&&localClock(now).minutes<585+index*60)outcome.status='not-due-yet';
  rows.push({day,job,...outcome});
  }}
- return {generatedAt:now.toISOString(),timezone:'America/Mexico_City',note:'Scheduler exit 0 is not proof of work or publication. Today may still be in progress.',rows};
+ return {alerts:rows.filter(row=>row.status==='no-receipt').map(row=>row.day+' '+row.job+' missing receipt'),generatedAt:now.toISOString(),timezone:'America/Mexico_City',note:'Scheduler exit 0 is not proof of work or publication. Today may still be in progress.',rows};
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const root=resolve(fileURLToPath(new URL('..',import.meta.url)));console.log(JSON.stringify(await dailyReport(root),null,2));

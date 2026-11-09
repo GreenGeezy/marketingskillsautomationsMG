@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-test('both repository scopes and normal Git mutations are allowed while force remains denied',()=>{
- const s=readFileSync(new URL('../scripts/invoke-opencode.ps1',import.meta.url),'utf8');
- assert.ok(s.includes('@($cfg.siteRepo,$cfg.stateDir,$repoRoot,'));
- for(const verb of ['add','commit','push origin'])assert.ok(s.includes("resource='git -C * "+verb+" *'; effect='allow'"));
- assert.ok(s.includes("resource='git -C * push *--force*'; effect='deny'"));
+
+test('diagnostic commands and Git dry runs are scoped, while agent Git mutations are unavailable',()=>{
+  const source=readFileSync(new URL('../scripts/invoke-opencode.ps1',import.meta.url),'utf8');
+  for (const command of ['node --version','git --version','git -C * push --dry-run origin HEAD:main'])
+    assert.ok(source.includes("resource='"+command+"'; effect='allow'"));
+  assert.doesNotMatch(source,/resource='git .*?(?:commit|push origin) .*?'; effect='allow'/);
+  assert.ok(source.includes("resource='git -C * push *--force*'; effect='deny'"));
 });

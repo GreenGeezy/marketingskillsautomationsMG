@@ -5,7 +5,7 @@ description: Execute MasterGrowbot's autonomous evidence-led buyer-intent SEO an
 
 # Current policy
 
-Read docs/RECOVERY-POLICY.md using automationRepo. Read private recovery-context.json first and only the relevant queue/receipt excerpts. It supersedes historical copy locks and publication rules.
+Read docs/RECOVERY-POLICY.md and docs/GROWTECH-PILOT.md using automationRepo. Use only the single runner-selected draft or due queue entries. Current pilot instructions supersede historical allocation, publishing and website-edit rules.
 
 # Objective and allocation
 
@@ -13,7 +13,7 @@ Read docs/RECOVERY-POLICY.md using automationRepo. Read private recovery-context
 
 # Run contract
 
-The Node runner has already acquired the old shared run-lock.json and written activeRun; use the supplied stateDir, runId and resultFile. Do not manage that lock yourself. Read recovery-context.json and the selected queue item; read only relevant experiment, issue and outreach excerpts. Reconcile latest main, production and receipts before acting. Preserve unrelated work. If dirty changes prevent a safe release, save a patch/brief in private state; never reset or discard them.
+The Node runner has already acquired the old shared run-lock.json and written activeRun; use the supplied stateDir, runId and resultFile. Do not manage that lock yourself. Read the selected queue item and relevant excerpts only. Never load the complete historical summary. Reconcile latest main, production and receipts before acting. Preserve unrelated work. If dirty changes prevent a safe release, save a patch/brief in private state; never reset or discard them.
 
 Use a maximum of three ranked opportunities with priority = buyer relevance (0–3) × observed demand confidence (0–3) × likely impact (0–3) / estimated hours. Scores are editorial prioritization, not traffic forecasts. Exact competitor-query volume unavailable is null; vendor audience/review activity is only a proxy and must be labelled. Build once from the existing competitor table; recheck public facts before publishing.
 

@@ -20,7 +20,7 @@ test('flat/stale index count does not block evidenced candidate; missing evidenc
  const s={releaseCandidate,publishedUrls:[],indexCoverage:{indexed:31,reportUpdatedAt:'2026-10-22'}};
  const now=new Date('2026-10-30T18:00:00Z');assert.equal(evaluateGate(s,now).ok,true);
  assert.equal(evaluateGate({...s,releaseCandidate:{}},now).ok,false);
- assert.equal(evaluateGate({...s,publishedUrls:[{publishedDate:'2026-10-29'},{publishedDate:'2026-10-30'}]},now).ok,false);
+ assert.equal(evaluateGate({...s,publishedUrls:[{publishedDate:'2026-10-28'},{publishedDate:'2026-10-29'},{publishedDate:'2026-10-30'}]},now).ok,false);
 });
 import {execFileSync} from 'node:child_process';
 test('a long guide cannot hide a thin neighbor in growGuides.ts',async()=>{
