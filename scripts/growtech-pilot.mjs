@@ -47,10 +47,16 @@ export function cadence(editorial, releases, now = new Date()) {
   return {blocks, nextEligibleAt: new Date(next).toISOString()};
 }
 
+// Editorial publication and commercial margin are separate concerns. A guide can ship
+// once the product facts, live offer and checkout are verified. Supplier cost, merchant
+// fees and the $40 contribution test stay a private accounting follow-up: they are only
+// enforced when the operator has supplied real numbers, never guessed or zero-filled.
 export function productReady(id, evidence, now = new Date()) {
   const cost = evidence?.supplierDeliveredUsd;
   const fees = evidence?.merchantFeesUsd;
   const checked = Date.parse(evidence?.verifiedAt);
+  const marginKnown = Number.isFinite(cost) && cost > 0 && Number.isFinite(fees) && fees >= 0;
+  const marginPasses = !marginKnown || products[id] - cost - fees - 5 >= 40;
   return evidence?.verified === true && evidence?.saleEnabled === false &&
     Number.isFinite(checked) && checked <= +now && +now - checked <= 7 * DAY &&
     evidence.priceUsd === products[id] && evidence.inStock === true && evidence.checkoutVerified === true &&
@@ -61,8 +67,7 @@ export function productReady(id, evidence, now = new Date()) {
       typeof evidence[key] === 'string' && evidence[key].trim()) &&
     (!id.startsWith('alphagrow-kit-') || ['ventilationContents','lightingDetails'].every(key =>
       typeof evidence[key] === 'string' && evidence[key].trim())) &&
-    Number.isFinite(cost) && cost > 0 && Number.isFinite(fees) && fees >= 0 &&
-    products[id] - cost - fees - 5 >= 40;
+    marginPasses;
 }
 
 export async function pilotState(dir, now = new Date()) {

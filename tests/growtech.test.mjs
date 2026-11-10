@@ -15,13 +15,16 @@ test('weekly and campaign ceilings deduplicate URLs and pending pushes block',()
   assert.ok(cadence([],releases,now).blocks.includes('campaign-cap'));
   assert.ok(cadence([],[{...releases[0],status:'push-pending'}],now).blocks.includes('pending-deployment'));
 });
-test('unknown costs, stale evidence, wrong SKU checkout or insufficient margins block product',()=>{
+test('editorial release needs verified facts and checkout; known margins must still clear $40',()=>{
   const e={verified:true,verifiedAt:now.toISOString(),saleEnabled:false,priceUsd:199,inStock:true,
     checkoutVerified:true,planId:'plan_abc',hostedUrl:'https://whop.com/checkout/plan_abc',checkoutPath:'/grow-tech/checkout/grow-light',
     sku:'AG1000',dimensions:'verified fixture',contents:'panel',supplierSource:'verified source',
     fulfillmentTerms:'verified handling and transit',supplierDeliveredUsd:100,merchantFeesUsd:10};
   assert.equal(productReady('grow-light',e,now),true);
-  for (const patch of [{supplierDeliveredUsd:null},{supplierDeliveredUsd:170},{verifiedAt:'2026-10-01'},
+  // Unknown supplier cost or fees is private accounting, not an editorial blocker.
+  assert.equal(productReady('grow-light',{...e,supplierDeliveredUsd:null,merchantFeesUsd:null},now),true);
+  // Real numbers, once supplied, still have to pass the contribution test and the other gates.
+  for (const patch of [{supplierDeliveredUsd:170},{verifiedAt:'2026-10-01'},
     {checkoutPath:'/grow-tech/checkout/wrong'},{checkoutVerified:false},{saleEnabled:true}])
     assert.equal(productReady('grow-light',{...e,...patch},now),false);
 });
