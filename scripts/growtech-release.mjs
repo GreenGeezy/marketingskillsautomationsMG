@@ -1,17 +1,23 @@
 import {execFileSync} from 'node:child_process';
-import {readFile, writeFile, mkdir} from 'node:fs/promises';
+import {readFile, writeFile, mkdir, rm, readdir} from 'node:fs/promises';
 import {join} from 'node:path';
 import {atomicJson} from './runtime-state.mjs';
 import {baseUrl, campaignId, cadence, pilotState, productReady, queue, readJson} from './growtech-pilot.mjs';
 import {localClock} from './policy.mjs';
 
-function command(file, args, cwd, timeout = 25000) {
+function command(file, args, cwd, timeout = 60000) {
   return execFileSync(file, args, {cwd, timeout, encoding:'utf8', windowsHide:true, env:{...process.env,GIT_TERMINAL_PROMPT:'0'}}).trim();
 }
 
 function visible(html) {
   return html.replace(/<[^>]*>/g,' ').replace(/&(?:quot|#34);/g,'"')
     .replace(/&(?:apos|#39|#x27);/gi,"'").replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
+}
+
+export function guideIdentifier(slug) {
+  // A slug may start with a digit ("2x2-vs-4x2-grow-tent"), so the import alias needs a
+  // leading letter to stay a valid JavaScript identifier in growGuides.ts.
+  return 'guide_' + slug.replaceAll('-','_');
 }
 
 export function publicationVerified(article, hub, sitemap, release) {
@@ -90,11 +96,19 @@ export async function publishDraft(config, root, task, deadline) {
   git(['fetch','origin','refs/heads/main']);
   const worktrees = join(dir,'growtech-worktrees');
   await mkdir(worktrees,{recursive:true});
+  for (const entry of await readdir(worktrees,{withFileTypes:true}).catch(()=>[])) {
+    if (!entry.isDirectory() || !entry.name.startsWith(item.slug + '-')) continue;
+    const stale = join(worktrees,entry.name);
+    try { git(['worktree','remove','--force',stale]); } catch {}
+    try { await rm(stale,{recursive:true,force:true,maxRetries:2}); } catch {}
+    try { git(['worktree','prune']); } catch {}
+  }
   const worktree = join(worktrees,item.slug + '-' + Date.now());
-  git(['worktree','add','--detach',worktree,base]);
+  command('git',['worktree','add','--detach',worktree,base],config.siteRepo,300000);
   const registry = 'src/data/growGuides.ts';
   const sitemap = 'public/sitemap.xml';
   const routing = 'vercel.json';
+  const llms = 'public/llms.txt';
   const module = 'src/data/' + item.slug + '.ts';
   const url = baseUrl + '/grow-guides/' + item.slug;
   const today = localClock().day;
@@ -103,8 +117,9 @@ export async function publishDraft(config, root, task, deadline) {
   const index = await readFile(join(worktree,registry),'utf8');
   const marker = 'export const growGuides: GrowGuide[] = [';
   if (!index.includes(marker) || index.includes(item.slug)) throw new Error('Unexpected guide registry or duplicate slug');
-  await writeFile(join(worktree,registry),"import { growtechPilotGuide as "+item.slug.replaceAll('-','_')+" } from './"+item.slug+"';\n"+
-    index.replace(marker,marker+'\n  '+item.slug.replaceAll('-','_')+','));
+  const identifier = guideIdentifier(item.slug);
+  await writeFile(join(worktree,registry),"import { growtechPilotGuide as "+identifier+" } from './"+item.slug+"';\n"+
+    index.replace(marker,marker+'\n  '+identifier+','));
   const xml = await readFile(join(worktree,sitemap),'utf8');
   if (xml.includes(url) || !xml.includes('</urlset>')) throw new Error('Unexpected sitemap or duplicate URL');
   await writeFile(join(worktree,sitemap),xml.replace('</urlset>','  <url><loc>'+url+'</loc><lastmod>'+today+'</lastmod></url>\n</urlset>'));
@@ -115,24 +130,35 @@ export async function publishDraft(config, root, task, deadline) {
   await writeFile(join(worktree,routing),configText.replace(routeMarker,
     '$1\n    '+JSON.stringify({source:'/grow-guides/'+item.slug,destination:'/seo/grow-guides/'+item.slug+'.html'})+','));
 
+  // public/llms.txt is a curated static file, so a new guide has to be added by hand
+  // unless the release writes it here. AI assistants read this file more reliably than HTML.
+  const llmsText = await readFile(join(worktree,llms),'utf8');
+  const llmsSection = '## Cannabis Grow Guides';
+  if (!llmsText.includes(llmsSection) || llmsText.includes(url)) throw new Error('Unexpected llms.txt or duplicate URL');
+  const summary = visible(article.shortDescription || article.metaDescription).replace(/\s+/g,' ').trim();
+  await writeFile(join(worktree,llms),llmsText.replace(llmsSection,
+    llmsSection+'\n- '+article.title.replace(/[\r\n]+/g,' ').trim()+': '+url+'\n  '+summary));
+
   command(process.execPath,[join(root,'scripts','check-content-quality.mjs'),'--min-words','550','--require-cta',join(worktree,module)],worktree);
   const npm = (args, timeout) => {
     if (process.platform === 'win32') return command('cmd.exe',['/d','/c','npm',...args],worktree,timeout);
     return command('npm',args,worktree,timeout);
   };
-  const timeLeft = () => {
+  const timeLeft = (cap = 300000) => {
     const left = deadline.getTime() - Date.now() - 90000;
     if (left <= 0) throw new Error('Release deferred: insufficient verification time');
-    return Math.min(left, 300000);
+    return Math.min(left, cap);
   };
-  npm(['ci','--no-audit','--no-fund'],timeLeft());
-  npm(['run','build'],timeLeft());
-  command(process.execPath,[join(worktree,'node_modules','eslint','bin','eslint.js'),module],worktree,timeLeft());
+  npm(['ci','--no-audit','--no-fund'],timeLeft(900000));
+  npm(['run','build'],timeLeft(600000));
+  command(process.execPath,[join(worktree,'node_modules','eslint','bin','eslint.js'),module],worktree,timeLeft(300000));
   const intro = visible(article.intro).slice(0,80);
   const candidate = {slug:item.slug,url,intro};
   const built = await Promise.all(['dist/seo/grow-guides/'+item.slug+'.html','dist/seo/grow-guides.html','dist/sitemap.xml'].map(p => readFile(join(worktree,p),'utf8')));
   if (!publicationVerified(...built,candidate)) throw new Error('Built article, canonical, sitemap or hub evidence failed');
-  const paths = [registry,sitemap,module,routing];
+  const builtLlms = await readFile(join(worktree,'dist','llms.txt'),'utf8');
+  if (!builtLlms.includes(url)) throw new Error('Built llms.txt is missing the new guide');
+  const paths = [registry,sitemap,module,routing,llms];
   git(['add','--',...paths],worktree);
   const staged = git(['diff','--cached','--name-only'],worktree).split(/\r?\n/);
   if (staged.length !== paths.length || staged.some(path => !paths.includes(path))) throw new Error('Unexpected staged paths');

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {cadence,productReady,discoveryDue} from '../scripts/growtech-pilot.mjs';
-import {publicationVerified} from '../scripts/growtech-release.mjs';
+import {publicationVerified, guideIdentifier} from '../scripts/growtech-release.mjs';
 const now = new Date('2026-11-09T18:00:00Z');
 test('spacing is global and crosses the Mexico City week boundary',()=>{
   const ledger=[{url:'https://www.mastergrowbot.com/old',publishedAt:'2026-11-08T18:01:00Z'}];
@@ -40,4 +40,9 @@ test('live verification requires the article, canonical, sitemap and exact hub l
   assert.equal(publicationVerified(html,hub,sitemap,r),true);
   assert.equal(publicationVerified(html,hub.replace('test','other'),sitemap,r),false);
   assert.equal(publicationVerified(html+html,hub,sitemap,r),false);
+});
+test('guide import aliases stay valid identifiers for digit-leading slugs',()=>{
+  assert.equal(guideIdentifier('2x2-vs-4x2-grow-tent'),'guide_2x2_vs_4x2_grow_tent');
+  assert.match(guideIdentifier('2x2-vs-4x2-grow-tent'),/^[A-Za-z_$][A-Za-z0-9_$]*$/);
+  assert.match(guideIdentifier('ag1000-vs-spider-farmer-sf1000'),/^[A-Za-z_$][A-Za-z0-9_$]*$/);
 });

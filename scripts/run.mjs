@@ -2,9 +2,10 @@ import {atomicJson, updateState, quotaFromLog} from './runtime-state.mjs';
 import {readFile, writeFile, mkdir, open, unlink, access} from 'node:fs/promises';
 import {resolve, dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {spawn} from 'node:child_process';
+import {spawn, execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {jobs, localClock, timeBudget, selectFree, validateConfig} from './policy.mjs';
+import {classifyLock, reconcileDeadLock} from './lock-guard.mjs';
 import {discoveryDue, pilotState, readJson} from './growtech-pilot.mjs';
 import {publishDraft, verifyReleases} from './growtech-release.mjs';
 
@@ -79,10 +80,49 @@ async function run() {
     try { await handle.writeFile(JSON.stringify(identity)); } finally { await handle.close(); }
   } catch(error) {
     if (error.code!=='EEXIST') throw error;
-    receipt.status='deferred-lock';
-    receipt.error='Shared lock present. Check owner, descendants and pending external actions before manual reconciliation.';
-    process.exitCode=75;
-    return;
+    const archiveDir = join(state,'lock-archive');
+    await mkdir(archiveDir,{recursive:true});
+    const recon = await reconcileDeadLock({
+      lockPath: lock,
+      archiveDir,
+      classify: (value, probes) => classifyLock(value, {
+        ...probes,
+        pidAlive: (pid) => {
+          try { process.kill(pid,0); return true; }
+          catch (probe) { return probe.code==='EPERM'; }
+        },
+        pidStartedAt: (pid) => {
+          if (process.platform!=='win32') return null;
+          try {
+            const out = execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',
+              `$p=Get-Process -Id ${Number(pid)} -ErrorAction SilentlyContinue; if($p){$p.StartTime.ToUniversalTime().ToString('o')}`],
+              {encoding:'utf8',timeout:8000,windowsHide:true}).trim();
+            const t = Date.parse(out);
+            return Number.isFinite(t) ? t : null;
+          } catch { return null; }
+        },
+      }),
+      extra: {reconciledBy:'run.mjs',job,runId},
+    });
+    if (!recon.reconciled) {
+      receipt.status='deferred-lock';
+      receipt.error='Shared lock present. Check owner, descendants and pending external actions before manual reconciliation.';
+      receipt.lockVerdict=recon;
+      process.exitCode=75;
+      return;
+    }
+    receipt.lockReconciled=recon;
+    try {
+      const handle = await open(lock,'wx');
+      owned=true;
+      try { await handle.writeFile(JSON.stringify(identity)); } finally { await handle.close(); }
+    } catch(retry) {
+      if (retry.code!=='EEXIST') throw retry;
+      receipt.status='deferred-lock';
+      receipt.error='Shared lock reappeared after reconciliation. Another job started first.';
+      process.exitCode=75;
+      return;
+    }
   }
 
   const deadline = new Date(+start+budget);

@@ -10,7 +10,7 @@ export const products = {
 };
 export const queue = [
   {slug:'ag1000-vs-spider-farmer-sf1000', intent:'AG1000 vs SF1000', productIds:['grow-light']},
-  {slug:'2x2-vs-4x2-grow-tent', intent:'2x2 vs 4x2 grow tent', productIds:['alphagrow-tent-2x2','alphagrow-tent-4x2']},
+  {slug:'2x2-vs-4x2-grow-tent', intent:'2x2 vs 4x2 grow tent', productIds:['alphagrow-tent-2x2','grow-light']},
   {slug:'2x2-grow-tent-kits-under-300', intent:'2x2 grow tent kit under 300', productIds:['alphagrow-kit-2x2']},
   {slug:'grow-tent-kit-vs-buying-separately', intent:'grow tent kit vs buying separately', productIds:['alphagrow-kit-2x2','alphagrow-tent-2x2','grow-light']},
   {slug:'4x2-grow-tent-ventilation-kit', intent:'4x2 grow tent ventilation kit vs complete kit', productIds:['alphagrow-kit-4x2']},
