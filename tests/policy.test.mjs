@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {timeBudget,localClock,requireFree,validateConfig,selectFree} from '../scripts/policy.mjs';
+import {timeBudget,localClock,requireFree,validateConfig,selectFree,agentStalled} from '../scripts/policy.mjs';
 test('pre-inference pricing failure does not select another model',()=>{
   const preferred='opencode/deepseek-v4.1-flash-free';
   const fallback='opencode/glm-5.3-flash-free';
@@ -32,4 +32,10 @@ test('unknown, paid, missing and nonzero cache prices fail closed',()=>{
 test('configuration disallows unlimited runs and timezone drift',()=>{
   const c={siteRepo:'x',stateDir:'y',opencodePath:'z',timezone:'America/Mexico_City',maxMinutes:50,model:'opencode/deepseek-v4.1-flash-free'};
   assert.doesNotThrow(()=>validateConfig(c));assert.throws(()=>validateConfig({...c,maxMinutes:51}));assert.throws(()=>validateConfig({...c,timezone:'UTC'}));
+});
+test('a zero-output agent session is stopped instead of holding the shared lock',()=>{
+  assert.equal(agentStalled({elapsedMs:9*60*1000,logBytes:0}),true);
+  assert.equal(agentStalled({elapsedMs:9*60*1000,logBytes:120}),false);
+  assert.equal(agentStalled({elapsedMs:7*60*1000,logBytes:0}),false);
+  assert.equal(agentStalled({elapsedMs:null,logBytes:0}),false);
 });

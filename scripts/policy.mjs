@@ -28,3 +28,9 @@ export function validateConfig(c) {
   if(!Number.isFinite(c.maxMinutes)||c.maxMinutes<1||c.maxMinutes>50) throw new Error('maxMinutes must be 1–50.');
   if(!freeModels.includes(c.model)) throw new Error('Unsupported model; choose an allowlisted free model.');
 }
+
+/** A session that writes nothing for this long has not started any work at all. */
+export const AGENT_STALL_MS = 8 * 60 * 1000;
+export function agentStalled({elapsedMs, logBytes, limit = AGENT_STALL_MS}) {
+  return Number.isFinite(elapsedMs) && logBytes === 0 && elapsedMs >= limit;
+}

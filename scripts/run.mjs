@@ -4,7 +4,7 @@ import {resolve, dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn, execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
-import {jobs, localClock, timeBudget, selectFree, validateConfig} from './policy.mjs';
+import {jobs, localClock, timeBudget, selectFree, validateConfig, agentStalled} from './policy.mjs';
 import {classifyLock, reconcileDeadLock} from './lock-guard.mjs';
 import {discoveryDue, pilotState, readJson} from './growtech-pilot.mjs';
 import {publishDraft, verifyReleases} from './growtech-release.mjs';
@@ -27,9 +27,21 @@ async function checkedModel(config) {
   return selectFree(await response.json(),config.model);
 }
 
+async function killTree(pid) {
+  // taskkill can report success while grandchildren survive, so verify and escalate.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt) await new Promise(resolve => setTimeout(resolve, 2000));
+    try { execFileSync('taskkill.exe',['/PID',String(pid),'/T','/F'],{windowsHide:true,timeout:15000}); } catch {}
+    try { process.kill(pid, 0); } catch { return true; }
+  }
+  try { process.kill(pid, 'SIGKILL'); } catch {}
+  try { process.kill(pid, 0); return false; } catch { return true; }
+}
+
 async function runAgent(config, contextFile, deadline, logPath) {
   const log = await open(logPath,'wx');
-  let timer;
+  let timer, watchdog, stalledRun = false;
+  const spawnedAt = Date.now();
   try {
     const args = ['-NoProfile','-NonInteractive','-File',join(root,'scripts','invoke-opencode.ps1'),
       '-ConfigPath',configPath,'-SelectedModel',receipt.modelReceipt.id,
@@ -38,17 +50,35 @@ async function runAgent(config, contextFile, deadline, logPath) {
       cwd:config.siteRepo,windowsHide:true,stdio:['ignore',log.fd,log.fd],
       env:{...process.env,OPENCODE_CONFIG_DIR:join(root,'.opencode'),MGB_AUTOMATION_ROOT:root},
     });
-    timer = setTimeout(()=>{
-      retainLock=true;
-      const killer=spawn('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true});
-      killer.on('error',()=>{});
-    },Math.max(0,+deadline-Date.now()));
-    return await new Promise((done,reject)=>{
+    let finish;
+    const exitPromise = new Promise((done,reject)=>{
+      finish = done;
       child.once('error',reject);
       child.once('close',(code,signal)=>done({code,signal}));
     });
+    timer = setTimeout(async ()=>{
+      retainLock=true;
+      await killTree(child.pid);
+      try { process.kill(child.pid, 0); finish({code:null,signal:'kill-failed'}); } catch {}
+    },Math.max(0,+deadline-Date.now()));
+    // A provider connection can stall before the first byte. An empty log after
+    // AGENT_STALL_MS means no tool call ran, so the lock must not be held hostage.
+    watchdog = setInterval(async ()=>{
+      try {
+        const {size} = await log.stat();
+        if (size > 0) { clearInterval(watchdog); return; }
+        if (agentStalled({elapsedMs:Date.now()-spawnedAt,logBytes:size})) {
+          clearInterval(watchdog);
+          stalledRun = true;
+          await killTree(child.pid);
+        }
+      } catch {}
+    },30000);
+    const exit = await exitPromise;
+    return stalledRun ? {...exit,stalled:true} : exit;
   } finally {
     clearTimeout(timer);
+    clearInterval(watchdog);
     await log.close();
   }
 }
@@ -187,6 +217,12 @@ async function run() {
     const logPath = join(runs,runId+'.log');
     await atomicJson(lock,{...identity,phase:'agent-started'});
     receipt.exit = await runAgent(config,contextFile,deadline,logPath);
+    if (receipt.exit.stalled) {
+      retainLock=false;
+      receipt.status='agent-stalled-no-output';
+      receipt.error='opencode-cli wrote no output for eight minutes, so the run was stopped and the lock released. No tool call had run.';
+      return;
+    }
     if (retainLock) {
       receipt.status='timed-out-reconcile-required';
       throw new Error('Deadline reached. Reconcile child processes and external actions.');
