@@ -5,6 +5,10 @@ import {localClock} from './policy.mjs';
 export const campaignId = 'growtech-2026-11';
 export const baseUrl = 'https://www.mastergrowbot.com';
 const DAY = 86400000;
+// Pilot ceiling. Raised from 5 to 10 after the first two releases were production-verified:
+// a five-release cap would have ended the campaign within a week, and the evidence,
+// 48-hour spacing and weekly cap already bound publication speed.
+export const MAX_CAMPAIGN_RELEASES = 10;
 export const products = {
   'grow-light': 199, 'alphagrow-tent-2x2': 119, 'alphagrow-tent-4x4': 149, 'alphagrow-kit-2x2': 299, 'alphagrow-kit-4x4': 499,
 };
@@ -13,7 +17,10 @@ export const queue = [
   {slug:'2x2-vs-4x2-grow-tent', intent:'2x2 vs 4x2 grow tent', productIds:['alphagrow-tent-2x2','grow-light']},
   {slug:'2x2-grow-tent-kits-under-300', intent:'2x2 grow tent kit under 300', productIds:['alphagrow-kit-2x2']},
   {slug:'grow-tent-kit-vs-buying-separately', intent:'grow tent kit vs buying separately', productIds:['alphagrow-kit-2x2','alphagrow-tent-2x2','grow-light']},
-  {slug:'grow-tent-ventilation-kit-vs-complete-kit', intent:'grow tent ventilation kit vs complete kit', productIds:['alphagrow-kit-4x4','alphagrow-kit-2x2']},];
+  {slug:'grow-tent-ventilation-kit-vs-complete-kit', intent:'grow tent ventilation kit vs complete kit', productIds:['alphagrow-kit-4x4','alphagrow-kit-2x2']},
+  {slug:'4x4-grow-tent-for-first-indoor-grow', intent:'4x4 grow tent for a first indoor grow', productIds:['alphagrow-tent-4x4','grow-light']},
+  {slug:'100w-led-grow-light-for-2x2-tent', intent:'100W LED grow light for a 2x2 tent', productIds:['grow-light','alphagrow-tent-2x2']},
+];
 
 export async function readJson(file, fallback) {
   try { return JSON.parse((await readFile(file,'utf8')).replace(/^\uFEFF/,'')); }
@@ -41,7 +48,7 @@ export function cadence(editorial, releases, now = new Date()) {
   const blocks = [];
   if (dates.filter(at => at >= +weekStart && at < +weekStart + 7 * DAY).length >= 3) blocks.push('weekly-cap');
   if (+now < next) blocks.push('48-hour-spacing');
-  if (new Set(releases.map(row => row.url)).size >= 5) blocks.push('campaign-cap');
+  if (new Set(releases.map(row => row.url)).size >= MAX_CAMPAIGN_RELEASES) blocks.push('campaign-cap');
   if (releases.some(row => row.status !== 'production-verified')) blocks.push('pending-deployment');
   return {blocks, nextEligibleAt: new Date(next).toISOString()};
 }

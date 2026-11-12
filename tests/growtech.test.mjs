@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cadence,productReady,discoveryDue} from '../scripts/growtech-pilot.mjs';
+import {cadence,productReady,discoveryDue,MAX_CAMPAIGN_RELEASES} from '../scripts/growtech-pilot.mjs';
 import {publicationVerified, guideIdentifier} from '../scripts/growtech-release.mjs';
 const now = new Date('2026-11-09T18:00:00Z');
 test('spacing is global and crosses the Mexico City week boundary',()=>{
@@ -11,8 +11,9 @@ test('spacing is global and crosses the Mexico City week boundary',()=>{
 test('weekly and campaign ceilings deduplicate URLs and pending pushes block',()=>{
   const rows=[1,2,3].map(i=>({url:'https://www.mastergrowbot.com/'+i,publishedAt:'2026-11-09T06:00:00Z'}));
   assert.ok(cadence(rows,[],now).blocks.includes('weekly-cap'));
-  const releases=[1,2,3,4,5].map(i=>({url:'https://www.mastergrowbot.com/'+i,publishedAt:'2026-10-01T06:00:00Z',status:'production-verified'}));
+  const releases=Array.from({length:MAX_CAMPAIGN_RELEASES},(_,i)=>({url:'https://www.mastergrowbot.com/c'+i,publishedAt:'2026-10-01T06:00:00Z',status:'production-verified'}));
   assert.ok(cadence([],releases,now).blocks.includes('campaign-cap'));
+  assert.equal(cadence([],releases.slice(1),now).blocks.includes('campaign-cap'),false);
   assert.ok(cadence([],[{...releases[0],status:'push-pending'}],now).blocks.includes('pending-deployment'));
 });
 test('editorial release needs verified facts and checkout; known margins must still clear $40',()=>{

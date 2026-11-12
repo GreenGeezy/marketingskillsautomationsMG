@@ -2,7 +2,7 @@
 
 The 09:45 Mexico City task reconciles releases and handles due Search Console work. Full performance review runs Tuesday and Friday. The 10:45 task advances one draft or releases one eligible guide. The 11:45 task handles due discovery every day and other due distribution work on Tuesday and Friday. The shared lock and 12:45 cutoff apply. Use only the configured free DeepSeek model.
 
-The runner selects from five candidates in scripts/growtech-pilot.mjs. Read only the selected draft and evidence. Campaign release conditions are a 48-hour gap between all new editorial URLs, at most three during a Mexico City Monday-Sunday week, and at most five campaign URLs. The private legacy new-page-ledger.json and GrowTech release ledger are combined by URL. A pending or ambiguous push blocks the next release until reconciled.
+The runner selects from the candidate list in scripts/growtech-pilot.mjs. Read only the selected draft and evidence. Campaign release conditions are a 48-hour gap between all new editorial URLs, at most three during a Mexico City Monday-Sunday week, and at most ten campaign URLs. The ceiling was raised from five to ten once the first releases were production-verified, because five would have ended the campaign in a week while the spacing, weekly and evidence gates already bound the pace. The private legacy new-page-ledger.json and GrowTech release ledger are combined by URL. A pending or ambiguous push blocks the next release until reconciled.
 
 ## Product and draft handoff
 
