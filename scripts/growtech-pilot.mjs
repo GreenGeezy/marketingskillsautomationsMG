@@ -6,15 +6,14 @@ export const campaignId = 'growtech-2026-11';
 export const baseUrl = 'https://www.mastergrowbot.com';
 const DAY = 86400000;
 export const products = {
-  'grow-light': 199, 'alphagrow-tent-2x2': 119, 'alphagrow-tent-4x2': 149, 'alphagrow-kit-2x2': 299, 'alphagrow-kit-4x2': 349,
+  'grow-light': 199, 'alphagrow-tent-2x2': 119, 'alphagrow-tent-4x4': 149, 'alphagrow-kit-2x2': 299, 'alphagrow-kit-4x4': 499,
 };
 export const queue = [
   {slug:'ag1000-vs-spider-farmer-sf1000', intent:'AG1000 vs SF1000', productIds:['grow-light']},
   {slug:'2x2-vs-4x2-grow-tent', intent:'2x2 vs 4x2 grow tent', productIds:['alphagrow-tent-2x2','grow-light']},
   {slug:'2x2-grow-tent-kits-under-300', intent:'2x2 grow tent kit under 300', productIds:['alphagrow-kit-2x2']},
   {slug:'grow-tent-kit-vs-buying-separately', intent:'grow tent kit vs buying separately', productIds:['alphagrow-kit-2x2','alphagrow-tent-2x2','grow-light']},
-  {slug:'4x2-grow-tent-ventilation-kit', intent:'4x2 grow tent ventilation kit vs complete kit', productIds:['alphagrow-kit-4x2']},
-];
+  {slug:'grow-tent-ventilation-kit-vs-complete-kit', intent:'grow tent ventilation kit vs complete kit', productIds:['alphagrow-kit-4x4','alphagrow-kit-2x2']},];
 
 export async function readJson(file, fallback) {
   try { return JSON.parse((await readFile(file,'utf8')).replace(/^\uFEFF/,'')); }
