@@ -4,7 +4,7 @@ import {resolve, dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn, execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
-import {jobs, localClock, timeBudget, selectFree, validateConfig, agentStalled} from './policy.mjs';
+import {jobs, localClock, timeBudget, selectFree, validateConfig, agentStalled, normalizeDistributionDue} from './policy.mjs';
 import {classifyLock, reconcileDeadLock} from './lock-guard.mjs';
 import {discoveryDue, pilotState, readJson} from './growtech-pilot.mjs';
 import {publishDraft, verifyReleases} from './growtech-release.mjs';
@@ -169,7 +169,7 @@ async function run() {
     if (release) receipt.release=release;
     const queue = await readJson(join(state,'gsc-url-queue.json'),{queue:[]});
     const issues = await readJson(join(state,'gsc-issues.json'),{issues:[]});
-    const due = await readJson(join(state,'distribution-due.json'),[]);
+    const due = normalizeDistributionDue(await readJson(join(state,'distribution-due.json'),[]));
     const weekday = new Intl.DateTimeFormat('en-US',{timeZone:config.timezone,weekday:'short'}).format(start);
     const issueDue = job==='measurement' && issues.issues.some(issue=>
       issue.nextCheckAt && Date.parse(issue.nextCheckAt)<=Date.now() &&

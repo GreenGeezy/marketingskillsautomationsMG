@@ -34,3 +34,10 @@ export const AGENT_STALL_MS = 8 * 60 * 1000;
 export function agentStalled({elapsedMs, logBytes, limit = AGENT_STALL_MS}) {
   return Number.isFinite(elapsedMs) && logBytes === 0 && elapsedMs >= limit;
 }
+
+/** distribution-due.json is either a flat array or a {dueNow,nextDue} ledger. */
+export function normalizeDistributionDue(ledger) {
+  if (Array.isArray(ledger)) return ledger;
+  const rows = [...(ledger?.dueNow || []), ...(ledger?.nextDue || [])];
+  return rows.map(row => ({...row, status: row.status || 'due', dueAt: row.dueAt || row.nextReviewAt}));
+}

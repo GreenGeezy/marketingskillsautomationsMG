@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {timeBudget,localClock,requireFree,validateConfig,selectFree,agentStalled} from '../scripts/policy.mjs';
+import {timeBudget,localClock,requireFree,validateConfig,selectFree,agentStalled,normalizeDistributionDue} from '../scripts/policy.mjs';
 test('pre-inference pricing failure does not select another model',()=>{
   const preferred='opencode/deepseek-v4.1-flash-free';
   const fallback='opencode/glm-5.3-flash-free';
@@ -38,4 +38,13 @@ test('a zero-output agent session is stopped instead of holding the shared lock'
   assert.equal(agentStalled({elapsedMs:9*60*1000,logBytes:120}),false);
   assert.equal(agentStalled({elapsedMs:7*60*1000,logBytes:0}),false);
   assert.equal(agentStalled({elapsedMs:null,logBytes:0}),false);
+});
+test('distribution due ledger tolerates both the array and the derived object shape',()=>{
+  assert.deepEqual(normalizeDistributionDue([{status:'due',dueAt:'2026-11-13'}]),[{status:'due',dueAt:'2026-11-13'}]);
+  const ledger={dueNow:[{candidateId:'a',dueAt:'2026-11-13'}],nextDue:[{candidateId:'b',nextReviewAt:'2026-11-20'}]};
+  const rows=normalizeDistributionDue(ledger);
+  assert.equal(rows.length,2);
+  assert.equal(rows[0].status,'due');
+  assert.equal(rows[1].dueAt,'2026-11-20');
+  assert.deepEqual(normalizeDistributionDue(undefined),[]);
 });
