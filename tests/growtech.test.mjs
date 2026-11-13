@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cadence,productReady,discoveryDue,MAX_CAMPAIGN_RELEASES} from '../scripts/growtech-pilot.mjs';
+import {cadence,productReady,discoveryDue,MAX_CAMPAIGN_RELEASES,queue} from '../scripts/growtech-pilot.mjs';
 import {publicationVerified, guideIdentifier} from '../scripts/growtech-release.mjs';
 const now = new Date('2026-11-09T18:00:00Z');
 test('spacing is global and crosses the Mexico City week boundary',()=>{
@@ -46,4 +46,13 @@ test('guide import aliases stay valid identifiers for digit-leading slugs',()=>{
   assert.equal(guideIdentifier('2x2-vs-4x2-grow-tent'),'guide_2x2_vs_4x2_grow_tent');
   assert.match(guideIdentifier('2x2-vs-4x2-grow-tent'),/^[A-Za-z_$][A-Za-z0-9_$]*$/);
   assert.match(guideIdentifier('ag1000-vs-spider-farmer-sf1000'),/^[A-Za-z_$][A-Za-z0-9_$]*$/);
+});
+
+test('the withdrawn under-300 kit comparison never re-enters the queue',()=>{
+  const slugs=[];
+  const ids={};
+  for(const item of queue){ slugs.push(item.slug); ids[item.slug]=item.productIds; }
+  assert.equal(slugs.includes('2x2-grow-tent-kits-under-300'),false);
+  assert.deepEqual(ids['grow-tent-setup-cost-under-400'],['alphagrow-tent-2x2','grow-light','alphagrow-kit-2x2']);
+  assert.equal(new Set(slugs).size,slugs.length);
 });
