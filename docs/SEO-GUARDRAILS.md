@@ -82,3 +82,27 @@ Every new page: app store buttons as the primary call to action (section 5), wit
 ## 11. Stop conditions
 
 Stop the run, write the reason in the run log, and make no change when: Search Console data is missing for a title or H1 change; a protected page is involved beyond a body addition; the phrase is already used; the build fails; you cannot tell whether a product can be bought.
+
+## 12. Yearly refresh of pages with a year in the title (owner-approved, 2026 to 2027)
+
+This is the only case where a title or H1 on a ranking page may change without the section 3 position rule. The owner approved it on 2026-11-15. It overrides section 3 item 3 for the pages listed here and for nothing else.
+
+When: start on 2026-12-15, not before. Finish by 2027-01-15. One page per run, one run per day at most.
+
+Which pages, in this order (highest clicks first):
+1. /grow-guides/best-ai-cannabis-growing-apps-2026
+2. /grow-guides/best-cannabis-growing-apps-2026
+3. /grow-guides/best-ai-plant-cameras-cannabis-growers-2026
+4. /grow-guides/cannabis-plant-identifier-apps-2026
+5. Any other guide whose title contains "2026". List it in the run log before changing it.
+
+What to change on each page:
+- In the title tag, H1, meta description and body text, change the year 2026 to 2027. Change nothing else in the title or H1. Keep every other word and the word order.
+- Keep the URL exactly as it is, even though it contains 2026. Never create a second page for 2027. Never add a redirect.
+- Update the facts: re-check each app's public store listing (price shown, rating count, last update) and correct what changed. Set dateModified and the sitemap lastmod to that day.
+- Keep the app store buttons as the primary call to action. You may add one link to a free tool: /cannabis-symptom-checker, /vpd-calculator or /grow-light-calculator.
+- Photos you may use: /images/grow/cannabis-leaf-yellowing-brown-spots.webp, /images/grow/flowering-cannabis-plant-led-tent.webp, /images/grow/cannabis-trichomes-macro.webp, each with width 1448, height 1086 and descriptive alt text.
+
+Write in the run log: the page, the old and new title, and each fact you corrected with its source URL. If the build fails, do not push.
+
+The free tools /cannabis-symptom-checker and /grow-light-calculator follow the same no-shop rule as /vpd-calculator in section 1. Do not edit the tool pages. Link to them from new pages.
