@@ -5,6 +5,8 @@ description: Execute MasterGrowbot's autonomous evidence-led buyer-intent SEO an
 
 # Current policy
 
+Read docs/SEO-GUARDRAILS.md first using automationRepo. It overrides everything below.
+
 Read docs/RECOVERY-POLICY.md and docs/GROWTECH-PILOT.md using automationRepo. Use only the single runner-selected draft or due queue entries. Current pilot instructions supersede historical allocation, publishing and website-edit rules.
 
 # Objective and allocation

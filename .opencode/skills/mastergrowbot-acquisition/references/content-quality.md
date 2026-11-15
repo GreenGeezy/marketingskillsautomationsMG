@@ -1,5 +1,7 @@
 # Content quality standard: no AI slop and bottom-of-funnel value
 
+Where this file conflicts with docs/SEO-GUARDRAILS.md (prices, trials, CTAs, ranking pages), the guardrails win.
+
 Binding for every new or materially updated article, buying guide, comparison, landing page, meta description, CTA, FAQ, alt text, and outreach message. Read this before selecting a topic and again before release.
 
 Source rules: https://github.com/petergyang/no-ai-slop, commit `000650b156983f5159695b441477f4e63b25dc85`. The owner has adopted the no-ai-slop editing principles and eval as binding, with one stricter rule: zero em dashes.
@@ -59,7 +61,7 @@ Save this in the private content brief and repeat the essentials in the result J
 6. Value thesis. One sentence naming what this page does that no ranking page does. Examples: original cost math, owner-verified checkout facts, measured data, a decision table, or a documented comparison.
 7. Evidence list. Each source, date, and the exact fact it supports.
 
-Score each candidate keyword from 0 to 3 on purchase intent, product fit, evidence available, observed gap, and path to checkout. Reject broad informational topics, "what is" pages, growing tips, and anything that cannot lead a buyer to the product or checkout. Do not create thin keyword variants of the same intent.
+Score each candidate keyword from 0 to 3 on purchase intent, product fit, evidence available, observed gap, and path to checkout. Reject "what is" pages, generic growing tips, and anything that cannot lead a reader to the app store buttons. Plant-symptom pages and free-tool pages are allowed (docs/SEO-GUARDRAILS.md section 10). Do not create thin keyword variants of the same intent.
 
 Example for the AG1000 light guide:
 
@@ -80,7 +82,7 @@ Example for the AG1000 light guide:
 - Red flags and common mistakes. Specific to this product category, not generic advice.
 - Who should buy and who should not.
 - FAQ. Real buyer questions, answer-first, no filler.
-- One primary CTA to the product or checkout and one secondary path.
+- Primary CTA: the MasterGrowbot AI app store buttons. Optional secondary path: a shop product only if it can be bought now.
 - Sources and dates. Owner-verified claims stay exactly as supplied.
 
 ## Persuasion and conversion standard (binding)
@@ -89,14 +91,14 @@ Every article exists to move a qualified reader to a MasterGrowbot purchase. Inf
 
 Hard rules:
 
-- Recommend MasterGrowbot first. The first 120 words name the product, the price or trial, who it fits, and the next step. Never open with neutral scene-setting.
+- Recommend MasterGrowbot first. The first 120 words name the product, who it fits, and the next step. No app price. A trial is mentioned only with the approved sentence "Eligible new Pro subscribers can try 3 days free." Never open with neutral scene-setting.
 - One buying verdict per page. State it in the intro and repeat it at the close. Do not end on "it depends" or a tie.
 - Never publish a net-negative comparison. If the honest facts would lead most readers to buy the competitor, do not publish that page. Find the angle where MasterGrowbot is the better purchase for that reader (bundle, workflow, support, privacy, update history, total cost, single seller, no extra controller), or choose a different topic. This is a publication gate, not a style preference.
 - No competitor recommendation directives. Never write "buy the SF1000", "choose GrowDoc", "pick GrowDiaries", or "Grow-Buddy is worth a look". Competitor strengths get one short, attributed section framed as what the reader gives up, never as advice to switch.
-- Price always lands on value. Show the annual or per-day cost, what is included, and what the reader avoids buying. Never leave a bare price comparison that makes the product look expensive.
+- Never write or change an app price, plan name or trial length. Show what is included, not what it costs.
 - Answer objections in the reader's words. "Why does it cost more?", "Do I need a subscription?", "Is a free app enough?", "Will it work on my phone?" Each gets a heading or FAQ entry and a direct answer.
-- Risk reversal on every page: trial window, return window, cancel anytime, no subscription required for hardware, one support path.
-- Multiple contextual CTAs, not one footer link: after the verdict, after the value table, after the objection section, and at the close. First-party store or checkout links only, with utm tags.
+- Risk reversal: only the approved trial sentence. No "cancel anytime" or other billing promise.
+- Multiple contextual CTAs, not one footer link: after the verdict, after the value table, after the objection section, and at the close. App store links first, with utm tags. Shop or checkout links only if the product can be bought now.
 - FAQ answers sell. Each answer states the choice and the reason, then the fact. Do not end on "we cannot say" unless the claim is genuinely unverifiable, and then pivot to the decision the reader can make.
 - Stay honest. No invented tests, ratings, results, or unsupported "best" claims. Persuasion comes from framing and completeness, not fabrication.
 - Disclosure stays, but it is one sentence, not a disclaimer paragraph.
@@ -105,14 +107,13 @@ Hard rules:
 
 All must pass before release:
 
-- [ ] The first 120 words contain the product name, the price or trial, the buyer it fits, and a CTA.
+- [ ] The first 120 words contain the product name, the buyer it fits, and an app store CTA. No price.
 - [ ] The page states one clear buying verdict and repeats it at the close.
 - [ ] No sentence advises the reader to buy, choose, or pick a competitor.
 - [ ] In a comparison, MasterGrowbot is the recommended purchase for the target reader.
-- [ ] At least three contextual CTAs to a first-party store, checkout, or app listing.
+- [ ] At least three contextual app store CTAs.
 - [ ] At least three buyer objections answered as headings or FAQ entries.
-- [ ] Annual or per-day cost math appears wherever a subscription or product price is compared.
-- [ ] Risk reversal present: trial, returns, cancellation, or no-subscription option.
+- [ ] No app price, plan name or trial length written, except the approved trial sentence.
 - [ ] Zero em dashes and zero `&mdash;`.
 - [ ] No banned words or empty phrases.
 - [ ] No slop patterns from the list above.
@@ -122,7 +123,7 @@ All must pass before release:
 - [ ] At least one comparison table or structured decision table.
 - [ ] At least one original value element: cost math, verified checkout facts, owner photos, measured data, or a decision framework competitors do not provide.
 - [ ] Every factual claim is sourced or owner-verified. No invented tests, reviews, ratings, prices, or specifications.
-- [ ] One clear CTA to the product or checkout and one secondary CTA.
+- [ ] App store buttons are the primary CTA; no shop product replaces them.
 - [ ] Headings every 150 to 250 words. No wall of text.
 - [ ] Read-aloud test passed. No sentence that sounds like a generic AI summary.
 

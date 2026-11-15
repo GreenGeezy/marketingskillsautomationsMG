@@ -3,7 +3,7 @@ name: playwright
 description: Use Playwright CLI on Windows for authenticated browser inspection and bounded verified software-listing actions.
 ---
 
-Use the installed `playwright-cli` command, not @playwright/test for browsing. Setup installs it once from the official @playwright/cli npm package. Check `playwright-cli --help` before assuming flags. The automation sets PLAYWRIGHT_CLI_SESSION=mastergrowbot-growth; never reuse unrelated personal browser profiles or extract cookies.
+Read docs/SEO-GUARDRAILS.md first (it overrides this file). Use the installed `playwright-cli` command, not @playwright/test for browsing. Setup installs it once from the official @playwright/cli npm package. Check `playwright-cli --help` before assuming flags. The automation sets PLAYWRIGHT_CLI_SESSION=mastergrowbot-growth; never reuse unrelated personal browser profiles or extract cookies.
 
 Use `playwright-cli open URL --headed`, `snapshot`, `click eN`, `fill eN text`, `press Enter`, `tab-list`, `tab-select N`, `screenshot`. Snapshot before using element references and after navigation or meaningful changes. References are ephemeral. Do not invent them or bypass stale refs with eval. Read only the compact relevant results. Save screenshots to output/playwright in the working website repository and private receipts outside public Git.
 

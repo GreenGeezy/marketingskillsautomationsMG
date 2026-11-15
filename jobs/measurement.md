@@ -1,3 +1,5 @@
+Read docs/SEO-GUARDRAILS.md first (use automationRepo). It overrides everything below. Write guardrailLog in the resultFile.
+
 The runner checks locks, cooldown, due work and pending deployments without inference. Process due Search Console queue or issue entries first using the existing Search Console reference. Share the limit of three priority attempts across all jobs per Mexico City day. Never resubmit the passed image validation or replay an ambiguous request. Check affected URLs, actual crawl dates and current markup coverage before attributing changes to repairs.
 
 Only Tuesday and Friday, refresh matched settled 28-day GSC and GA4 comparisons with up to two drilldowns. Include qualified GrowTech visits and verified checkout click sessions where available. Keep confirmed Whop orders, refunds and unknown attribution distinct. Read only relevant evidence. Use separate shell calls for node --version, git --version and playwright-cli --help when needed. Continue independent checks after any denial.

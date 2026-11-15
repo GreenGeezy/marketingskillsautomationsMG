@@ -1,8 +1,8 @@
-Read docs/RECOVERY-POLICY.md first. Follow the current GrowTech pilot in docs/GROWTECH-PILOT.md. The runner selects one task and alone handles storefront releases.
+Read docs/SEO-GUARDRAILS.md FIRST. It overrides every other instruction in this repository. Then read docs/RECOVERY-POLICY.md. Follow the current GrowTech pilot in docs/GROWTECH-PILOT.md. The runner selects one task and alone handles storefront releases.
 
 # MasterGrowbot acquisition operating rules
 
-Goal: 10x qualified website traffic, prioritizing MasterGrowbot AI paid subscriptions and revenue. This is a target, never a guarantee. Software/product comparisons only; no cultivation, yield or potency instructions. Secondary outcome: Grow-Tech sales.
+Goal: 10x qualified website traffic, prioritizing MasterGrowbot AI paid subscriptions and revenue. This is a target, never a guarantee. Software/product comparisons and plant-symptom diagnosis pages (see docs/SEO-GUARDRAILS.md section 10); no yield, potency or drug-preparation instructions. Secondary outcome: Grow-Tech sales, which never replace the app store buttons as the primary call to action.
 
 Later October21 design approval: the owner authorized wider Quickstart/PDF cards with larger existing covers and moving the Amazon book to a full-width homepage-style gallery BELOW those two cards. Preserve that approved layout after release; do not recreate the old three-column layout. This design-only exception does not authorize changing wording, prices, reviews, product claims or the light section.
 

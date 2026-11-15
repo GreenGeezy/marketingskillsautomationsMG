@@ -9,6 +9,8 @@ metadata:
 allowed-tools: Bash(seomator:*)
 ---
 
+Read docs/SEO-GUARDRAILS.md first (use the automation repo path). Audit scores are hints only: never retitle, change an H1, rename a nav link or consolidate pages because an audit rule flags it.
+
 # SEO Audit Skill
 
 Audit websites for SEO, technical, content, performance, security, JavaScript rendering, and AI readiness using the SEOmator CLI.

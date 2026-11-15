@@ -1,3 +1,5 @@
+Read docs/SEO-GUARDRAILS.md first (use automationRepo). It overrides everything below. Write guardrailLog in the resultFile.
+
 Use the runner context and the existing Search Console reference. Start with due entries in gsc-url-queue.json, even outside Tuesday/Friday. The runner already reconciled pending GrowTech releases against production and records verified articles in the queue. Maximum three priority inspection/request attempts in total across jobs per Mexico City day. Write pending action evidence before submission and preserve accepted, blocked and ambiguous states separately. Never retry ambiguous requests. Exit if Google limits requests.
 
 Tuesday/Friday only: review up to two due verified distribution items after discovery. Preserve existing outreach limits. Keep receipts private. Use separate shell calls for node --version, git --version and playwright-cli --help if diagnosis is needed. A denied command does not imply the other checks failed.

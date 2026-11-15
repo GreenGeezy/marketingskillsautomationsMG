@@ -1,5 +1,7 @@
 # One-time owner handoff after the October21 release
 
+Read docs/SEO-GUARDRAILS.md first; it overrides this prompt.
+
 Connect to https://github.com/GreenGeezy/marketingskillsautomationsMG.git using C:/Users/elidu/Desktop/MasterGrowbotMarketing/marketingskillsautomationsMG and to https://github.com/GreenGeezy/mastergrowbot.git using the existing website checkout identified in config.local.json. Inspect git status and remotes first; fetch and use fast-forward-only updates when clean. Preserve unrelated files and never reset/force-push or create duplicate clones, scheduled tasks or deployments.
 
 Read the automation repository's AGENTS.md, docs/AG1000-CAMPAIGN.md, scripts/campaign.mjs and docs/DAILY-CHECKLIST.md. OWNER CONTENT LOCK: preserve all existing website text, reviews, ratings, product information, performance claims, prices, images and design exactly. The owner confirms those facts/reviews are verified. Only the Amazon book card beside the digital offers and the single /grow-guides/100w-led-grow-light-buying-checklist addition are authorized. Reconcile production and private ag1000-campaign.json first; do not recreate completed additions or edit old articles/shop copy.

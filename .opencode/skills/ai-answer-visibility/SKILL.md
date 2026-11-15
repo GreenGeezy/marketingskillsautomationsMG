@@ -3,7 +3,7 @@ name: ai-answer-visibility
 description: Improve evidence-backed MasterGrowbot visibility in search-grounded LLM answers and agent research without inventing citations or special ranking requirements.
 ---
 
-Use alongside mastergrowbot-acquisition for each published comparison. The goal is inclusion in relevant buying answers and qualified referral visits, then paid subscriptions. No guaranteed inclusion or universal number-one claim.
+Read docs/SEO-GUARDRAILS.md first (it overrides this file). Use alongside mastergrowbot-acquisition for each published comparison. The goal is inclusion in relevant buying answers and qualified referral visits, then paid subscriptions. No guaranteed inclusion or universal number-one claim.
 
 1. Confirm public key pages deliver meaningful initial HTML, correct canonical, indexable status and page-appropriate valid schema. Verify actual public crawler access at robots/CDN layers for Googlebot, Bingbot, OAI-SearchBot and documented Claude search/user agents. Training crawlers are separate decisions: never broadly enable training access or remove private-route restrictions to chase citations.
 2. Maintain consistent public product identity: MasterGrowbot AI, official website, exact official iOS/Android destinations, verified platform differences, ownership/contact information and source dates. Only include supported features and current subscription information; never imply platform parity without evidence.

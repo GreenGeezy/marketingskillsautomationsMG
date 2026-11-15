@@ -208,7 +208,7 @@ async function run() {
     const contextFile = join(runs,runId+'.context.md');
     if (!smoke) {
       if (task) await mkdir(dirname(task.draftPath),{recursive:true});
-      const policy = await readFile(join(root,'docs','RECOVERY-POLICY.md'),'utf8');
+      const policy = (await readFile(join(root,'docs','SEO-GUARDRAILS.md'),'utf8'))+'\n\n'+(await readFile(join(root,'docs','RECOVERY-POLICY.md'),'utf8'));
       const instructions = await readFile(join(root,'jobs',job+'.md'),'utf8');
       const context = {runId,job,stateDir:state,siteRepo:config.siteRepo,automationRepo:root,resultFile,
         deadlineUTC:deadline.toISOString(),weekday:new Intl.DateTimeFormat('en-US',{timeZone:config.timezone,weekday:'short'}).format(start),task};

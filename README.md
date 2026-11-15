@@ -47,6 +47,10 @@ The runner launches a **private standalone server** so per-job model/permission 
 
 See [strategy](docs/STRATEGY.md), [public audit](docs/AUDIT.md), and [AI-answer visibility skill](.opencode/skills/ai-answer-visibility/SKILL.md). Three evidence-qualified pages/week is a short-sprint maximum, not a quota. Do not equate more model calls with more qualified traffic.
 
+## SEO guardrails
+
+Every run reads [docs/SEO-GUARDRAILS.md](docs/SEO-GUARDRAILS.md) first. It protects ranking pages (/vpd-calculator and the homepage), blocks title/H1 rewrites without Search Console evidence, and overrides any conflicting file here.
+
 ## Content quality gate
 
 Every new or materially updated article, guide, comparison, meta description, CTA, FAQ and outreach message follows [the content-quality standard](.opencode/skills/mastergrowbot-acquisition/references/content-quality.md) and the [no-ai-slop rules](https://github.com/petergyang/no-ai-slop). The owner's stricter rule is zero em dashes (U+2014) and zero `&mdash;`; en dashes are allowed only in numeric ranges. Every article needs a bottom-of-funnel keyword brief, a value thesis, sourced facts, a comparison or decision element and a clear product, app-store or checkout CTA. Before release, run:

@@ -1,5 +1,7 @@
 # AG1000 sales campaign, October21–25, 2026
 
+EXPIRED October26. Historical only. Do not use it to add shop offers or replace app calls to action (docs/SEO-GUARDRAILS.md section 5).
+
 The owner authorizes a temporary hardware focus through Sunday October25 in America/Mexico_City. The runner injects this campaign only on those dates; app-first acquisition resumes October26. Preserve all three schedules, the shared lock, free-model checks, fresh sessions and 12:45 cutoff.
 
 ## Binding owner correction, October21

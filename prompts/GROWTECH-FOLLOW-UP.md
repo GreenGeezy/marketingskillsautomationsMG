@@ -1,3 +1,5 @@
+Read docs/SEO-GUARDRAILS.md first; it overrides this prompt.
+
 Read AGENTS.md and docs/GROWTECH-PILOT.md in GreenGeezy/marketingskillsautomationsMG.
 
 Use scripts/status.ps1 for the latest receipts. The Windows tasks remain scheduled at 09:45, 10:45 and 11:45 Mexico City time with a 12:45 cutoff. The guarded runner owns releases and uses the free DeepSeek model.
