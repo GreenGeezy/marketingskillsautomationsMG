@@ -1,6 +1,6 @@
 # Daily operation
 
-1. Keep the laptop awake, online and signed into Windows from 09:45 to 12:45 Mexico City time. Scheduled tasks use OpenCode Desktop's bundled engine; the desktop window does not need to remain open. Do not repeatedly paste the setup prompt or manually start duplicate jobs.
+1. Best case: keep the laptop awake, online and signed into Windows from 09:45 to 12:45 Mexico City time. If the laptop was off or asleep at a start time, Windows starts the missed job when it is back on, and the runner accepts it any time from 07:00 to 21:00. Each job still finishes at most once per day. Scheduled tasks use OpenCode Desktop's bundled engine; the desktop window does not need to remain open. Do not repeatedly paste the setup prompt or manually start duplicate jobs.
 2. Jobs start at 09:45 (measurement, Search Console issues and URL queue), 10:45 (buyer-intent content and AI-answer visibility), and 11:45 (distribution). Existing lock, free-model checks and the 12:45 cutoff apply.
 3. Afterward run `powershell -NoProfile -File scripts/status.ps1` from this repository to see task and receipt status. Completed execution is not proof of increased traffic or purchases. Investigate partial/blocked/timeout results; never delete locks or daily markers to force a repeat.
 

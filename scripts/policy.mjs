@@ -7,10 +7,21 @@ export function localClock(date = new Date()) {
   const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {timeZone:'America/Mexico_City', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hourCycle:'h23'}).formatToParts(date).map(x=>[x.type,x.value]));
   return {day:`${p.year}-${p.month}-${p.day}`, minutes:Number(p.hour)*60+Number(p.minute), seconds:Number(p.second)};
 }
+// Scheduled starts stay at 09:45/10:45/11:45. Windows starts a missed task as soon as the
+// laptop is back on, so the runner accepts work from 07:00 to 21:00 Mexico City time and
+// a day missed at 09:45 is caught up later the same day. completedToday() keeps it to one
+// finished run per job per day.
+export const WINDOW_START = 420; // 07:00
+export const WINDOW_END = 1260; // 21:00
 export function timeBudget(date, maxMinutes = 50) {
   const p=localClock(date);
-  if(p.minutes<585 || p.minutes>=765) return 0;
-  return Math.min(maxMinutes*60000, (765-p.minutes)*60000-p.seconds*1000);
+  if(p.minutes<WINDOW_START || p.minutes>=WINDOW_END) return 0;
+  return Math.min(maxMinutes*60000, (WINDOW_END-p.minutes)*60000-p.seconds*1000);
+}
+// True when this job already finished today (completed, partial or blocked). Pure: pass receipts in.
+export function completedToday(receipts, job, day) {
+  return receipts.some(r => r && r.job===job && ['completed','partial','blocked'].includes(r.status) &&
+    localClock(new Date(r.startedAt||r.at||0)).day===day);
 }
 export function requireFree(catalog, model) {
   if(!freeModels.includes(model)) throw new Error('Model not explicitly allowlisted; no paid or automatic fallback.');

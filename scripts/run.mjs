@@ -1,10 +1,10 @@
 import {atomicJson, updateState, quotaFromLog} from './runtime-state.mjs';
-import {readFile, writeFile, mkdir, open, unlink, access} from 'node:fs/promises';
+import {readFile, writeFile, mkdir, open, unlink, access, readdir} from 'node:fs/promises';
 import {resolve, dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn, execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
-import {jobs, localClock, timeBudget, selectFree, validateConfig, agentStalled, normalizeDistributionDue} from './policy.mjs';
+import {jobs, localClock, timeBudget, completedToday, selectFree, validateConfig, agentStalled, normalizeDistributionDue} from './policy.mjs';
 import {classifyLock, reconcileDeadLock} from './lock-guard.mjs';
 import {discoveryDue, pilotState, readJson} from './growtech-pilot.mjs';
 import {publishDraft, verifyReleases} from './growtech-release.mjs';
@@ -100,6 +100,13 @@ async function run() {
   const state = config.stateDir;
   const runs = join(state,'opencode-runs');
   await mkdir(runs,{recursive:true});
+  // A catch-up start after the laptop was off must not repeat a job that already finished today.
+  const earlier = [];
+  for (const name of await readdir(runs).catch(()=>[])) {
+    if (!name.endsWith('.json')) continue;
+    try { earlier.push(JSON.parse((await readFile(join(runs,name),'utf8')).replace(/^\uFEFF/,''))); } catch {}
+  }
+  if (completedToday(earlier, job, localClock(start).day)) { receipt.status='already-done-today'; return; }
   receiptPath = join(runs,runId+'.json');
   lock = join(state,'run-lock.json');
   const identity = {owner:runId,pid:process.pid,startedAt:start.toISOString(),

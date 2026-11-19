@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {timeBudget,localClock,requireFree,validateConfig,selectFree,agentStalled,normalizeDistributionDue} from '../scripts/policy.mjs';
+import {timeBudget,completedToday,localClock,requireFree,validateConfig,selectFree,agentStalled,normalizeDistributionDue} from '../scripts/policy.mjs';
 test('pre-inference pricing failure does not select another model',()=>{
   const preferred='opencode/deepseek-v4.1-flash-free';
   const fallback='opencode/glm-5.3-flash-free';
@@ -15,11 +15,13 @@ test('pre-inference pricing failure does not select another model',()=>{
 });
 const at=x=>new Date(`2026-10-17T${x}-06:00`);
 test('Mexico City hard boundaries and capped run duration',()=>{
-  assert.equal(timeBudget(at('09:44:59')),0);
+  assert.equal(timeBudget(at('06:59:59')),0);
+  assert.equal(timeBudget(at('07:00:00')),50*60000);
   assert.equal(timeBudget(at('09:45:00')),50*60000);
-  assert.equal(timeBudget(at('12:30:00')),15*60000);
-  assert.equal(timeBudget(at('12:44:59')),1000);
-  assert.equal(timeBudget(at('12:45:00')),0);
+  assert.equal(timeBudget(at('15:10:00')),50*60000);
+  assert.equal(timeBudget(at('20:45:00')),15*60000);
+  assert.equal(timeBudget(at('20:59:59')),1000);
+  assert.equal(timeBudget(at('21:00:00')),0);
   assert.equal(localClock(new Date('2026-10-18T01:00:00Z')).day,'2026-10-17');
 });
 test('unknown, paid, missing and nonzero cache prices fail closed',()=>{
@@ -47,4 +49,14 @@ test('distribution due ledger tolerates both the array and the derived object sh
   assert.equal(rows[0].status,'due');
   assert.equal(rows[1].dueAt,'2026-11-20');
   assert.deepEqual(normalizeDistributionDue(undefined),[]);
+});
+
+test('one finished run per job per day, catch-up allowed after a failure',()=>{
+  const r=(job,status,iso)=>({job,status,startedAt:iso});
+  const day='2026-11-19';
+  assert.equal(completedToday([r('content','completed','2026-11-19T16:50:00Z')],'content',day),true);
+  assert.equal(completedToday([r('content','failed','2026-11-19T16:50:00Z')],'content',day),false);
+  assert.equal(completedToday([r('content','outside-window','2026-11-19T13:10:00Z')],'content',day),false);
+  assert.equal(completedToday([r('measurement','completed','2026-11-19T15:50:00Z')],'content',day),false);
+  assert.equal(completedToday([r('content','completed','2026-11-18T16:50:00Z')],'content',day),false);
 });
