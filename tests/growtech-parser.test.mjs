@@ -29,3 +29,34 @@ test('draft validation rejects absent evidence and foreign checkout paths',()=>{
       faqs:[],relatedSlugs:[]}};
   assert.throws(()=>validDraft(draft,task,{'grow-light':{checkoutPath:'/grow-tech/checkout/grow-light'}}));
 });
+
+test('draft validation accepts the documented prose and structured review evidence',()=>{
+  const task={slug:'test',productIds:['grow-light']};
+  const article={slug:'test',title:'Test',h1:'Test',metaTitle:'Test',shortDescription:'Test',metaDescription:'Test',
+    intro:'A buyer introduction with specific verified information. '.repeat(3),
+    sections:[{heading:'One',body:'[Buy](/grow-tech/checkout/grow-light)'},{heading:'Two'},{heading:'Three'}],
+    faqs:[],relatedSlugs:[]};
+  const review={eligible:true,
+    distinctIntent:'A budget question about the first tent setup, kept separate from the size and sensor guides already live.',
+    demandEvidence:{searchConsole:'No query-level record',purchaseEvidence:'Live checkout verified today'},
+    sources:[{url:'https://example.com/a',checkedAt:'2026-11-19'},{url:'https://example.com/b',checkedAt:'2026-11-19'}]};
+  assert.doesNotThrow(()=>validDraft({review,article},task,{'grow-light':{checkoutPath:'/grow-tech/checkout/grow-light'}}));
+  assert.doesNotThrow(()=>validDraft({review:{...review,demandEvidence:'A short evidence sentence.'},article},task,{'grow-light':{checkoutPath:'/grow-tech/checkout/grow-light'}}));
+  assert.throws(()=>validDraft({review:{...review,distinctIntent:'too short'},article},task,{'grow-light':{checkoutPath:'/grow-tech/checkout/grow-light'}}));
+  assert.throws(()=>validDraft({review:{...review,demandEvidence:{}},article},task,{'grow-light':{checkoutPath:'/grow-tech/checkout/grow-light'}}));
+});
+
+test('campaign tags are allowed on app links but never on a checkout CTA',()=>{
+  const task={slug:'test',productIds:['grow-light']};
+  const article={slug:'test',title:'Test',h1:'Test',metaTitle:'Test',shortDescription:'Test',metaDescription:'Test',
+    intro:'A buyer introduction with specific verified information. '.repeat(3),
+    sections:[{heading:'One',body:'[App](https://apps.apple.com/us/app/x?utm_source=website&utm_medium=organic&utm_campaign=test) and [Buy](/grow-tech/checkout/grow-light)'},{heading:'Two'},{heading:'Three'}],
+    faqs:[],relatedSlugs:[]};
+  const review={eligible:true,distinctIntent:'A distinct budget intent kept separate from every page already live.',
+    demandEvidence:'Live storefront and checkout verified today.',
+    sources:[{url:'https://example.com/a',checkedAt:'2026-11-19'},{url:'https://example.com/b',checkedAt:'2026-11-19'}]};
+  const evidence={'grow-light':{checkoutPath:'/grow-tech/checkout/grow-light'}};
+  assert.doesNotThrow(()=>validDraft({review,article},task,evidence));
+  const tagged={...article,sections:[{heading:'One',body:'[Buy](/grow-tech/checkout/grow-light?utm_source=website)'},{heading:'Two'},{heading:'Three'}]};
+  assert.throws(()=>validDraft({review,article:tagged},task,evidence));
+});
