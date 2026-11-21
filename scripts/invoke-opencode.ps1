@@ -2,6 +2,7 @@ param([Parameter(Mandatory)][string]$ConfigPath,[string]$ContextPath,[switch]$Sm
 $ErrorActionPreference = 'Stop'
 $cfg = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
 if($SelectedModel){$cfg.model=$SelectedModel}
+# check-model.mjs re-reads the config, so pass the selected model explicitly (free, or the capped paid fallback).
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $env:PATH = (Join-Path $repoRoot 'node_modules\.bin') + ';' + $env:PATH
 $env:OPENCODE_CONFIG_DIR = Join-Path $repoRoot '.opencode'
@@ -98,7 +99,7 @@ $permissions += @(
   @{action='shell'; resource='*Invoke-WebRequest*'; effect='deny'}
 )
 $env:OPENCODE_CONFIG_CONTENT = @{
-  model=$cfg.model; small_model=$cfg.model; enabled_providers=@('opencode'); share='disabled';
+  model=$cfg.model; small_model=$cfg.model; enabled_providers=@($cfg.model.Split('/')[0]); share='disabled';
   compaction=@{auto=$true;keep=@{tokens=15000};buffer=20000};
   permissions=$permissions; agents=@{build=@{model=$cfg.model; permissions=$permissions}};
   instructions=@((Join-Path $repoRoot 'AGENTS.md'))

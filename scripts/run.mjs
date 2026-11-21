@@ -4,7 +4,7 @@ import {resolve, dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn, execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
-import {jobs, localClock, timeBudget, completedToday, selectFree, validateConfig, agentStalled, normalizeDistributionDue} from './policy.mjs';
+import {jobs, localClock, timeBudget, completedToday, attemptState, selectFree, pickModel, addCooldown, earliestRetry, validateConfig, agentStalled, normalizeDistributionDue} from './policy.mjs';
 import {classifyLock, reconcileDeadLock} from './lock-guard.mjs';
 import {discoveryDue, pilotState, readJson} from './growtech-pilot.mjs';
 import {publishDraft, verifyReleases} from './growtech-release.mjs';
@@ -21,10 +21,13 @@ const receipt = {job,runId,startedAt:start.toISOString(),status:'setup-failed'};
 let receiptPath = join(root,'output','scheduler',runId+'.json');
 let lock, owned = false, retainLock = false, currentFile, active = false;
 
-async function checkedModel(config) {
+async function modelCatalog() {
   const response = await fetch('https://models.dev/api.json',{signal:AbortSignal.timeout(20000)});
   if (!response.ok) throw new Error('Model catalog unavailable');
-  return selectFree(await response.json(),config.model);
+  return response.json();
+}
+async function checkedModel(config) {
+  return selectFree(await modelCatalog(),config.model);
 }
 
 async function killTree(pid) {
@@ -107,6 +110,18 @@ async function run() {
     try { earlier.push(JSON.parse((await readFile(join(runs,name),'utf8')).replace(/^\uFEFF/,''))); } catch {}
   }
   if (completedToday(earlier, job, localClock(start).day)) { receipt.status='already-done-today'; return; }
+  // The day marker is written when an agent starts, so a quota stop, crash or stale lock must
+  // not burn the rest of the day. Retry while the marker has no finished outcome and the
+  // attempt budget is left; the cap still keeps Windows restarts from looping.
+  const marker = join(runs,day+'-'+job+'.json');
+  const previous = smoke ? null : await readJson(marker,null);
+  const attempt = smoke ? {attempts:0,retry:true} : attemptState(previous);
+  const attempts = attempt.attempts;
+  if (!smoke && !attempt.retry) {
+    receipt.status='attempts-exhausted';
+    receipt.attemptsToday=attempts;
+    return;
+  }
   receiptPath = join(runs,runId+'.json');
   lock = join(state,'run-lock.json');
   const identity = {owner:runId,pid:process.pid,startedAt:start.toISOString(),
@@ -163,8 +178,6 @@ async function run() {
   }
 
   const deadline = new Date(+start+budget);
-  const marker = join(runs,day+'-'+job+'.json');
-  if (!smoke && await readJson(marker,null)) { receipt.status='already-attempted'; return; }
   const task = !smoke && job==='content' ? await pilotState(state) : null;
   if (task?.action==='no-due-work') {
     receipt.status='no-due-work';
@@ -187,21 +200,24 @@ async function run() {
       return;
     }
   }
+  const cooldownPath = join(state,'quota-cooldown.json');
+  let cooldown = {}, catalog = null;
   if (task?.action!=='publish') {
-    const cooldown = await readJson(join(state,'quota-cooldown.json'),{});
-    if (Date.parse(cooldown.retryAt)>Date.now()) {
+    cooldown = await readJson(cooldownPath,{});
+    catalog = await modelCatalog();
+    receipt.modelReceipt = pickModel(catalog,config,cooldown);
+    if (!receipt.modelReceipt) {
       receipt.status='quota-cooldown';
-      receipt.retryAt=cooldown.retryAt;
+      receipt.retryAt=earliestRetry(cooldown,config);
       return;
     }
-    receipt.modelReceipt=await checkedModel(config);
   }
 
   if (+deadline-Date.now()<60000) { receipt.status='outside-window'; return; }
   receipt.status='running';
   await atomicJson(receiptPath,receipt);
   if (!smoke) {
-    await writeFile(marker,JSON.stringify({runId,status:'attempted',startedAt:start.toISOString()}),{flag:'wx'});
+    await writeFile(marker,JSON.stringify({runId,status:'attempted',attempts:attempts+1,startedAt:start.toISOString()}));
     currentFile=join(state,'current.json');
     await updateState(currentFile,value=>{value.activeRun={id:runId,owner:runId,job,startedAt:start.toISOString()};});
     active=true;
@@ -221,8 +237,9 @@ async function run() {
         deadlineUTC:deadline.toISOString(),weekday:new Intl.DateTimeFormat('en-US',{timeZone:config.timezone,weekday:'short'}).format(start),task};
       await writeFile(contextFile,JSON.stringify(context,null,2)+'\n\n'+policy+'\n\n'+instructions);
     }
-    const logPath = join(runs,runId+'.log');
+    let logPath = join(runs,runId+'.log');
     await atomicJson(lock,{...identity,phase:'agent-started'});
+    for (let fallback = 1; ; fallback++) {
     receipt.exit = await runAgent(config,contextFile,deadline,logPath);
     if (receipt.exit.stalled) {
       retainLock=false;
@@ -236,9 +253,20 @@ async function run() {
     }
     const quota = quotaFromLog(await readFile(logPath,'utf8'));
     if (quota) {
-      await atomicJson(join(state,'quota-cooldown.json'),quota);
+      // Free limit hit: cool down only this model and continue with the next one if time allows.
+      cooldown = addCooldown(cooldown,receipt.modelReceipt.id,quota);
+      await atomicJson(cooldownPath,cooldown);
+      const next = pickModel(catalog,config,cooldown);
+      if (next && fallback < 6 && +deadline-Date.now() > 5*60000) {
+        receipt.fallbacks = [...(receipt.fallbacks||[]),{from:receipt.modelReceipt.id,to:next.id,at:new Date().toISOString()}];
+        receipt.modelReceipt = next;
+        logPath = join(runs,runId+'-fallback-'+fallback+'.log');
+        continue;
+      }
       receipt.status='quota-exhausted';
       return;
+    }
+    break;
     }
     if (receipt.exit.code!==0) throw new Error('OpenCode exited '+receipt.exit.code);
     if (smoke) {
@@ -264,7 +292,7 @@ async function run() {
     receipt.status=result.status;
     receipt.resultFile=resultFile;
   }
-  await atomicJson(marker,{runId,status:receipt.status,finishedAt:new Date().toISOString()});
+  await atomicJson(marker,{runId,status:receipt.status,attempts:attempts+1,finishedAt:new Date().toISOString()});
 }
 
 try {
