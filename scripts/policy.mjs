@@ -4,10 +4,10 @@ export const jobs = ['measurement', 'content', 'distribution'];
 // live catalog before use: a model that stops being free is skipped, never billed.
 export const freeModels = [
   'opencode/deepseek-v4.1-flash-free',
-  'opencode/glm-5.3-flash-free',
-  'opencode/minimax-m3.1-flash-free',
-  'opencode/kimi-k2.5-free',
-  'opencode/deepseek-v4-flash-free',
+  'opencode/mimo-v2.6-flash-free',
+  'opencode/hy4-flash-free',
+  'opencode/longcat-2.5-free',
+  'opencode/nemotron-3.5-super-vl-free',
 ];
 // Optional last resort, off unless config.paidFallback.model is set. Only very cheap OpenRouter
 // models qualify (USD per 1M tokens). The monthly ceiling is enforced by the credit limit on the
@@ -76,10 +76,12 @@ export function cooledModels(cooldown, config, now = Date.now()) {
   return out;
 }
 /** First usable model: free models in order, then the optional capped paid fallback. Null when none. */
-export function pickModel(catalog, config, cooldown, now = Date.now()) {
+// available: model ids OpenCode serves right now; empty means "not checked".
+export function pickModel(catalog, config, cooldown, now = Date.now(), available = []) {
   const cooled = cooledModels(cooldown, config, now);
   for (const model of modelChain(config)) {
     if (cooled[model]) continue;
+    if (available.length && !available.includes(model)) continue;
     try { return requireFree(catalog, model); } catch {}
   }
   const paid = config.paidFallback?.model;

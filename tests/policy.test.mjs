@@ -4,13 +4,13 @@ import {pickModel,addCooldown,modelChain,requireCapped,earliestRetry} from '../s
 import {timeBudget,completedToday,localClock,requireFree,validateConfig,selectFree,agentStalled,normalizeDistributionDue,retryAllowed,attemptState,MAX_ATTEMPTS_PER_DAY} from '../scripts/policy.mjs';
 test('pre-inference pricing failure does not select another model',()=>{
   const preferred='opencode/deepseek-v4.1-flash-free';
-  const fallback='opencode/glm-5.3-flash-free';
-  const cat={opencode:{models:{'deepseek-v4.1-flash-free':{cost:{input:1,output:0}},'glm-5.3-flash-free':{cost:{input:0,output:0}}}}};
+  const fallback='opencode/mimo-v2.6-flash-free';
+  const cat={opencode:{models:{'deepseek-v4.1-flash-free':{cost:{input:1,output:0}},'mimo-v2.6-flash-free':{cost:{input:0,output:0}}}}};
   assert.throws(()=>selectFree(cat,preferred));
   cat.opencode.models['deepseek-v4.1-flash-free'].cost.input=0;
   assert.equal(selectFree(cat,preferred).id,preferred);
   cat.opencode.models['deepseek-v4.1-flash-free'].cost.input=1;
-  cat.opencode.models['glm-5.3-flash-free'].cost.output=1;
+  cat.opencode.models['mimo-v2.6-flash-free'].cost.output=1;
   assert.throws(()=>selectFree(cat,preferred));
   assert.throws(()=>selectFree({},'unknown/model'));
 });
@@ -97,18 +97,24 @@ test('a fully missed day leaves no marker for the next day',()=>{
 
 test('free-limit on one model falls through to the next free model, never to a paid one by default',()=>{
   const free={input:0,output:0};
-  const catalog={opencode:{models:{'deepseek-v4.1-flash-free':{cost:free},'glm-5.3-flash-free':{cost:free},'minimax-m3.1-flash-free':{cost:{input:1,output:2}}}},
+  const catalog={opencode:{models:{'deepseek-v4.1-flash-free':{cost:free},'mimo-v2.6-flash-free':{cost:free},'hy4-flash-free':{cost:{input:1,output:2}}}},
     openrouter:{models:{'z-ai/glm-5.3-flash':{cost:{input:0.04,output:0.08},tool_call:true},'big/expensive':{cost:{input:3,output:15},tool_call:true}}}};
   const config={model:'opencode/deepseek-v4.1-flash-free'};
   assert.equal(pickModel(catalog,config,{}).id,'opencode/deepseek-v4.1-flash-free');
   const now=Date.parse('2026-11-21T18:00:00Z');
   let cd=addCooldown({},'opencode/deepseek-v4.1-flash-free',{retryAt:'2026-11-22T00:00:00Z',observedAt:'2026-11-21T18:00:00Z'});
-  assert.equal(pickModel(catalog,config,cd,now).id,'opencode/glm-5.3-flash-free');
-  cd=addCooldown(cd,'opencode/glm-5.3-flash-free',{retryAt:'2026-11-22T01:00:00Z'});
+  assert.equal(pickModel(catalog,config,cd,now).id,'opencode/mimo-v2.6-flash-free');
+  cd=addCooldown(cd,'opencode/mimo-v2.6-flash-free',{retryAt:'2026-11-22T01:00:00Z'});
   assert.equal(pickModel(catalog,config,cd,now),null,'a model that is no longer free is skipped, and no paid fallback is configured');
   assert.equal(earliestRetry(cd,config,now),'2026-11-22T00:00:00Z');
   assert.equal(pickModel(catalog,{...config,paidFallback:{model:'openrouter/z-ai/glm-5.3-flash'}},cd,now).id,'openrouter/z-ai/glm-5.3-flash');
   assert.throws(()=>requireCapped(catalog,'openrouter/big/expensive'));
-  assert.equal(pickModel(catalog,config,{retryAt:'2026-11-22T00:00:00Z'},now).id,'opencode/glm-5.3-flash-free','old single-model cooldown file still works');
-  assert.deepEqual(modelChain({model:'opencode/glm-5.3-flash-free',fallbackModels:['opencode/glm-5.3-flash-free','opencode/deepseek-v4.1-flash-free']}),['opencode/glm-5.3-flash-free','opencode/deepseek-v4.1-flash-free']);
+  assert.equal(pickModel(catalog,config,{retryAt:'2026-11-22T00:00:00Z'},now).id,'opencode/mimo-v2.6-flash-free','old single-model cooldown file still works');
+  assert.deepEqual(modelChain({model:'opencode/mimo-v2.6-flash-free',fallbackModels:['opencode/mimo-v2.6-flash-free','opencode/deepseek-v4.1-flash-free']}),['opencode/mimo-v2.6-flash-free','opencode/deepseek-v4.1-flash-free']);
+});
+
+test('a model OpenCode does not serve is skipped',()=>{
+  const free={input:0,output:0};
+  const catalog={opencode:{models:{'deepseek-v4.1-flash-free':{cost:free},'mimo-v2.6-flash-free':{cost:free}}}};
+  assert.equal(pickModel(catalog,{model:'opencode/deepseek-v4.1-flash-free'},{},Date.now(),['opencode/mimo-v2.6-flash-free']).id,'opencode/mimo-v2.6-flash-free');
 });

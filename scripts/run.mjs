@@ -26,6 +26,13 @@ async function modelCatalog() {
   if (!response.ok) throw new Error('Model catalog unavailable');
   return response.json();
 }
+// Models OpenCode serves right now; the public catalog lists more than OpenCode offers.
+function servedModels(config) {
+  try {
+    const out = execFileSync(config.opencodePath,['models','--standalone'],{encoding:'utf8',timeout:90000,windowsHide:true});
+    return out.split(/\r?\n/).map(line=>line.trim()).filter(line=>/^[a-z0-9-]+\/\S+$/i.test(line));
+  } catch { return []; }
+}
 async function checkedModel(config) {
   return selectFree(await modelCatalog(),config.model);
 }
@@ -101,6 +108,18 @@ async function run() {
     throw new Error('Setup incomplete');
   for (const path of [config.siteRepo,config.stateDir,config.opencodePath]) await access(path);
   const state = config.stateDir;
+  // Keep the agent's website copy current with production (it was 14 commits behind on 2026-11-21).
+  // Fast-forward only, and only when no tracked file is modified, so local work is never overwritten.
+  if (!smoke) {
+    try {
+      const dirty = execFileSync('git',['-C',config.siteRepo,'status','--porcelain','--untracked-files=no'],{encoding:'utf8',timeout:30000,windowsHide:true}).trim();
+      if (!dirty) {
+        execFileSync('git',['-C',config.siteRepo,'fetch','--quiet','origin','main'],{timeout:120000,windowsHide:true});
+        execFileSync('git',['-C',config.siteRepo,'merge','--ff-only','--quiet','origin/main'],{timeout:60000,windowsHide:true});
+        receipt.siteRepoHead = execFileSync('git',['-C',config.siteRepo,'rev-parse','--short','HEAD'],{encoding:'utf8',timeout:15000,windowsHide:true}).trim();
+      } else receipt.siteRepoSync = 'skipped-local-changes';
+    } catch (error) { receipt.siteRepoSync = 'failed: '+String(error?.message||error).slice(0,200); }
+  }
   const runs = join(state,'opencode-runs');
   await mkdir(runs,{recursive:true});
   // A catch-up start after the laptop was off must not repeat a job that already finished today.
@@ -201,11 +220,12 @@ async function run() {
     }
   }
   const cooldownPath = join(state,'quota-cooldown.json');
-  let cooldown = {}, catalog = null;
+  let cooldown = {}, catalog = null, served = [];
   if (task?.action!=='publish') {
     cooldown = await readJson(cooldownPath,{});
     catalog = await modelCatalog();
-    receipt.modelReceipt = pickModel(catalog,config,cooldown);
+    served = servedModels(config);
+    receipt.modelReceipt = pickModel(catalog,config,cooldown,Date.now(),served);
     if (!receipt.modelReceipt) {
       receipt.status='quota-cooldown';
       receipt.retryAt=earliestRetry(cooldown,config);
@@ -256,7 +276,7 @@ async function run() {
       // Free limit hit: cool down only this model and continue with the next one if time allows.
       cooldown = addCooldown(cooldown,receipt.modelReceipt.id,quota);
       await atomicJson(cooldownPath,cooldown);
-      const next = pickModel(catalog,config,cooldown);
+      const next = pickModel(catalog,config,cooldown,Date.now(),served);
       if (next && fallback < 6 && +deadline-Date.now() > 5*60000) {
         receipt.fallbacks = [...(receipt.fallbacks||[]),{from:receipt.modelReceipt.id,to:next.id,at:new Date().toISOString()}];
         receipt.modelReceipt = next;
