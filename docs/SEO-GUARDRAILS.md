@@ -106,3 +106,9 @@ What to change on each page:
 Write in the run log: the page, the old and new title, and each fact you corrected with its source URL. If the build fails, do not push.
 
 The free tools /cannabis-symptom-checker and /grow-light-calculator follow the same no-shop rule as /vpd-calculator in section 1. Do not edit the tool pages. Link to them from new pages.
+
+## 13. Seasonal and yearly pages (owner-approved 2026-11-21)
+
+- /grow-guides/gifts-for-cannabis-growers is an evergreen holiday page. Never create a second gift guide or a dated copy. Each year between November 1 and November 15, change the year in its title, H1 and meta description, re-check that every linked product can still be bought, and set modifiedDate and the sitemap lastmod. Leave it untouched otherwise.
+- Never add seeds, clones or live plants as gifts or products on any page.
+- The 2026 to 2027 refresh in section 12 still starts on 2026-12-15.
