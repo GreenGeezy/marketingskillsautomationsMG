@@ -10,12 +10,18 @@ Attach this repo to every Antigravity conversation about growth or revenue; star
 ## Who does what
 | Tool | Job |
 |---|---|
-| Google AI Pro (Gemini 4 Neon in Antigravity + Chrome) | Growth lead: reads Search Console, RevenueCat, Analytics and App Store Connect; decides and runs the SEO plan; makes AI videos in Flow; drafts KDP books |
-| Claude Pro #1 (Opus in Claude Code) | Website and design work on mastergrowbot.com and the app repos |
-| Claude Pro #2 | Takes over the newsletter and LinkedIn automations from Codex when Codex's free month ends (about Dec 22) |
-| Codex (free until about Dec 22) | Newsletter (Tuesdays) and LinkedIn (Thursdays) automations |
-| Muse | Instagram posting and replies |
+| Claude Pro (both plans, Opus) | **Everything users see:** the three apps, mastergrowbot.com, design, and the Cannabis AI Lab YouTube videos. Not automations. |
+| Google AI Pro (Gemini 4 Neon in Antigravity + Chrome) | **Automations and growth operations.** Takes over the newsletter and LinkedIn jobs from Codex, and runs analytics, SEO decisions and any other recurring growth work. Usage is generous, so it should also take on one more high-value recurring job. |
+| Codex (free until about Dec 22) | Keeps running the newsletter (Tuesdays) and LinkedIn (Thursdays) jobs until Antigravity takes them over |
+| Muse | Instagram posting and replies (3 accounts) |
 | OpenCode free models (this repo's cron) | Daily SEO content, distribution and measurement jobs |
+
+## YouTube: Cannabis AI Lab (made with Claude Pro)
+- Channel ID UCdu8adY6F6TmpBgUKmN3xHg, "made by the team behind MasterGrowbot AI". Format: "You vs. AI" tests with real plant photos, motion graphics, an AI narrator, no founder on camera. New episode on Thursdays.
+- Episode 1 is live (youtu.be/INIJjZNU1r0); there are also live Shorts. Episodes 2 to 4 are in production. The Nov 22 research on the next 3 videos found that story-with-stakes formats win.
+- Local project folder (not a GitHub repo): `C:\Users\elidu\.claudecodevids`. Key files: `Cannabis-AI-Lab-HANDOFF.md`, `growth/Next-3-Videos.md`, `growth/PLAYBOOK.md`, `video-*/YouTube-Upload-Copy.md`.
+- Already made: 28 to 25 second LinkedIn cut-downs of episode 1 (MasterGrowbotMarketing/linkedin-authority/cannabis-ai-lab-launch).
+- Implication: the channel already produces real, on-brand video. Reusing it as Shorts, Reels (through Muse) and LinkedIn clips is cheaper than starting a separate AI-host account.
 
 ## Repos
 - This repo (marketing automations): https://github.com/GreenGeezy/marketingskillsautomationsMG
@@ -42,8 +48,8 @@ Eli already sells *The Master Cannabis IPM Playbook* on Amazon (https://a.co/d/0
 | System | What it does | Status |
 |---|---|---|
 | OpenCode SEO/AEO cron (repo marketingskillsautomationsMG, free models) | Daily jobs: **content** (writes or refreshes grow guides on mastergrowbot.com), **distribution**, **measurement** (reads Search Console Tue/Fri) | Runs daily. Several recent runs failed (Nov 17 timeout, Nov 19 quota exhausted, Nov 20 setup failed); Nov 21 and 22 completed. Traffic fell while it ran. Whether it caused the drop is **unknown**. |
-| Codex: newsletter (Tuesdays 10:00 Mexico City) | Researches and builds the weekly email; sends Eli a preview; schedules delivery 48 hours later | Active |
-| Codex: LinkedIn (Thursdays 10:00) | Organic posts for Eli, Master Grow Bud AI and the newsletter Page, via Buffer | Active. LinkedIn message limits are already used for app promotion. |
+| Codex: newsletter (Tuesdays 10:00 Mexico City) | Researches and builds the weekly email; sends Eli a preview; schedules delivery 48 hours later. Instructions: this repo's newsletter skill plus MasterGrowbotMarketing/linkedin-authority/launches/newsletter-runbook.md and newsletter-scorecard.md | Active; moves to Antigravity by about Dec 22 |
+| Codex: LinkedIn (Thursdays 10:00) | Organic posts for Eli, Master Grow Bud AI and the newsletter Page, via Buffer. Thursday afternoons are reserved for YouTube episode launches. | Active; moves to Antigravity by about Dec 22. LinkedIn message limits are already used for app promotion. |
 | Muse | Runs 3 Instagram accounts; performs better than Codex did | Active. Cannabis accounts have reach restrictions. |
 
 ## Website (mastergrowbot.com)
@@ -55,8 +61,8 @@ Homepage sells the app; one newsletter signup band at the bottom. Also: grow gui
 
 ## Advice received so far (may conflict)
 - **Fable 5.2:** don't touch the shop (it has $0 revenue); focus on SEO.
-- **Claude (Opus):** the main bottleneck is traffic (about 100 new users a month). Suggested short-form video, either from the existing Muse accounts or a new **openly labeled** AI host ("Sage") who never claims personal grow results. It rejected an AI person presented as real, because a fake endorser can get the Instagram account cluster banned.
-- Both agree: keep the Codex newsletter and LinkedIn jobs running.
+- **Claude (Opus):** the main bottleneck is traffic (about 100 new users a month). Short-form video is the best free traffic channel: first reuse Cannabis AI Lab clips across Instagram (Muse), Shorts and LinkedIn. A separate, **openly labeled** AI host account ("Sage", strategy/ai-ugc-playbook.md) is optional. Claude rejected an AI person presented as real, because a fake endorser can get the Instagram account cluster banned.
+- Both agree: keep the newsletter and LinkedIn jobs running (Codex now, Antigravity later).
 
 ## Where things live in this repo
 - strategy/context-pack.md: this file
