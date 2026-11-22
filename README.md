@@ -1,6 +1,20 @@
-Read docs/RECOVERY-POLICY.md FIRST using automationRepo absolute path. It supersedes conflicting historical copy locks, caps, index-growth gates and selection rules below.
+# MasterGrowbot marketing automations
 
-# MasterGrowbot autonomous SEO + AI-answer acquisition
+For **LinkedIn and the newsletter**, hand your agent [the startup prompt and takeover procedure](communications/START.md). The active Codex jobs run Tuesdays (newsletter) and Thursdays (LinkedIn) at 10 a.m. in America/Mexico_City. The backup starts in standby. Both jobs optimize toward confirmed readers and verified paid outcomes.
+
+| Handoff file | What it covers |
+|---|---|
+| [Systems](communications/SYSTEMS.md) | Website and mobile app repositories, production routing, Cloudflare's observed role, Resend, Formspree, optional Google Sheets/Apps Script, Gmail, app and commerce backends |
+| [LinkedIn](communications/LINKEDIN.md) | Three bylines, Buffer/native scheduling, controlled creative tests, attribution and recovery |
+| [Newsletter](communications/NEWSLETTER.md) | Editorial standard, weekly/monthly consent, owner preview, 48-hour window, holds, delivery and public archive |
+| [Audience and revenue](communications/REVENUE.md) | Home and professional readers, app positioning, offers, funnel metrics, experiments and dated targets |
+| [Website implementation brief](communications/WEBSITE-BRIEF.md) | Portable Claude Code brief for the free tools, site placements, email integration and release checks |
+| [Offline rehearsal](communications/rehearsal.mjs) and [synthetic cases](tests/communications.test.mjs) | Run `node --test tests/communications.test.mjs` with Node 22+ to check backup decisions without credentials. Provider access and verification are covered in the startup procedure. |
+
+## SEO and AI-answer acquisition
+
+For SEO jobs read docs/RECOVERY-POLICY.md FIRST using the automationRepo absolute path. It supersedes conflicting historical copy locks, caps, index-growth gates and selection rules below.
+
 
 Goal: **10x website traffic from interested MasterGrowbot AI buyers**, then more paid subscriptions. This repository contains the strategy, audit, reusable skills, three daily jobs, Windows scheduler and a paste-ready OpenCode setup prompt. Growth is a target, not a guaranteed result.
 

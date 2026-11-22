@@ -1,4 +1,6 @@
-Read docs/SEO-GUARDRAILS.md FIRST. It overrides every other instruction in this repository. Then read docs/RECOVERY-POLICY.md. Follow the current GrowTech pilot in docs/GROWTECH-PILOT.md. The runner selects one task and alone handles storefront releases.
+For the two weekly LinkedIn and newsletter jobs, start with [communications/START.md](communications/START.md). Those jobs have their own scheduler, publishing accounts and private receipts. The following runner rules apply to SEO work. The communications handoff grants no additional storefront release rights.
+
+For SEO jobs read docs/SEO-GUARDRAILS.md FIRST. It overrides conflicting SEO instructions in this repository. Then read docs/RECOVERY-POLICY.md. Follow the current GrowTech pilot in docs/GROWTECH-PILOT.md. The runner selects one task and alone handles storefront releases.
 
 # MasterGrowbot acquisition operating rules
 
